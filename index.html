@@ -1,24 +1,50 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Schultag-Zähler OÖ</title>
+<title>Wir zählen unsere Schultage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;height:100%;font-family:system-ui,Segoe UI,Arial,sans-serif;background:#fff;color:#1d2b3a}
-.w{box-sizing:border-box;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:3vmin;text-align:center;gap:1vmin}
-.l{font-size:5vmin;color:#5a6b7d}
-.n{font-size:24vmin;font-weight:800;line-height:1;color:#1f6feb}
-.m{font-size:12vmin;font-weight:800;line-height:1;color:#2da44e}
-.d{font-size:4vmin;color:#5a6b7d}
-hr{width:70%;border:0;border-top:1px solid #e6ebf1;margin:2vmin 0}
+:root{--rot:#d9534f;--ink:#2b2b2b;--h:#d6336c;--z:#1c7ed6;--e:#2f9e44;--heute:#f59f00;--vorbei:#e9ecef}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);font-family:Andika,"Comic Sans MS",system-ui,sans-serif}
+.w{height:100%;display:flex;gap:3vmin;padding:3vmin;align-items:center;justify-content:center}
+.links{flex:0 0 38%;display:flex;flex-direction:column;gap:3vmin;align-items:center}
+.titel{width:100%;padding:2.2vmin;background:repeating-linear-gradient(90deg,var(--rot) 0 2.2vmin,#fff 2.2vmin 4.4vmin);border:.3vmin solid var(--ink)}
+.titel div{background:#fff;border:.3vmin solid var(--ink);padding:2.5vmin 2vmin;text-align:center;font-size:6.2vmin;line-height:1.15}
+.ziel{display:flex;align-items:center;gap:2vmin;font-size:3.6vmin}
+.stern{flex:0 0 auto;width:16vmin;height:16vmin;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:4vmin;color:#fff;background:var(--z);
+ clip-path:polygon(50% 0,61% 20%,82% 10%,79% 33%,100% 40%,83% 56%,96% 77%,72% 76%,65% 100%,50% 84%,35% 100%,28% 76%,4% 77%,17% 56%,0 40%,21% 33%,18% 10%,39% 20%)}
+.stellen{display:flex;gap:1.5vmin}
+.st{width:11vmin;text-align:center;border:.3vmin solid var(--ink);border-radius:1.5vmin;overflow:hidden}
+.st b{display:block;font-size:3vmin;color:#fff;padding:.5vmin 0}
+.st span{display:block;font-size:8vmin;font-weight:700;line-height:1.2}
+.H b{background:var(--h)}.H span{color:var(--h)}
+.Z b{background:var(--z)}.Z span{color:var(--z)}
+.E b{background:var(--e)}.E span{color:var(--e)}
+.heute{font-size:3.6vmin;text-align:center}
+.heute strong{font-size:5vmin}
+.gitter{flex:0 0 auto;display:grid;grid-template-columns:repeat(10,1fr);border:.25vmin solid var(--ink);width:min(56vw,90vh)}
+.gitter div{aspect-ratio:1.25;display:flex;align-items:center;justify-content:center;border:.12vmin solid #888;font-size:min(2.3vw,3.6vh)}
+.gitter .v{background:var(--vorbei);color:#9aa0a6}
+.gitter .t{background:var(--heute);color:#fff;font-weight:700;transform:scale(1.18);box-shadow:0 0 0 .4vmin #fff,0 0 1.5vmin rgba(0,0,0,.35);z-index:1;border-radius:.6vmin;animation:p 2s ease-in-out infinite}
+@keyframes p{50%{transform:scale(1.3)}}
+.klein{font-size:2.6vmin;color:#6c757d;text-align:center}
 </style></head><body><div class="w">
-<div class="l" id="l1">Schultag seit 9.9.2024</div>
-<div class="n" id="tot">–</div>
-<div class="d" id="det"></div>
-<hr>
-<div class="l" id="l2">Schultag im Schuljahr 2026/27</div>
-<div class="m" id="cur">–</div>
+<div class="links">
+ <div class="titel"><div>Wir zählen<br>unsere Schultage</div></div>
+ <div class="heute" id="heute">Heute ist der<br><strong id="nr">–</strong> Schultag</div>
+ <div class="stellen">
+  <div class="st H"><b>H</b><span id="h">–</span></div>
+  <div class="st Z"><b>Z</b><span id="z">–</span></div>
+  <div class="st E"><b>E</b><span id="e">–</span></div>
+ </div>
+ <div class="ziel"><div class="stern" id="ziel">500</div><div id="zieltext"></div></div>
+ <div class="klein" id="jahr"></div>
+</div>
+<div class="gitter" id="g"></div>
 </div>
 <script>
-/* Volksschule Oberösterreich – schulfreie Tage (Mo–Fr werden nur gezählt, wenn nicht frei) */
+/* Volksschule Oberösterreich – Zählung ab 9.9.2024, schulfreie Tage je Schuljahr */
 var JAHRE=[
  {n:'2024/25',s:'2024-09-09',e:'2025-07-04',f:[['2024-10-26','2024-11-02'],['2024-12-08','2024-12-08'],['2024-12-21','2025-01-06'],['2025-02-15','2025-02-23'],['2025-04-12','2025-04-21'],['2025-05-01','2025-05-01'],['2025-05-04','2025-05-04'],['2025-05-29','2025-05-29'],['2025-06-07','2025-06-09'],['2025-06-19','2025-06-19']]},
  {n:'2025/26',s:'2025-09-08',e:'2026-07-10',f:[['2025-10-26','2025-11-02'],['2025-12-08','2025-12-08'],['2025-12-24','2026-01-06'],['2026-02-14','2026-02-22'],['2026-03-28','2026-04-06'],['2026-05-01','2026-05-01'],['2026-05-04','2026-05-04'],['2026-05-14','2026-05-14'],['2026-05-23','2026-05-25'],['2026-06-04','2026-06-04']]},
@@ -28,14 +54,25 @@ var JAHRE=[
 var AUTONOM=[];
 function D(s){var p=s.split('-');return new Date(+p[0],p[1]-1,+p[2]);}
 function k(d){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
-function zaehle(j,h){var fr=j.f.concat(AUTONOM).map(function(x){return[k(D(x[0])),k(D(x[1]))];}),c=0,d=D(j.s),e=D(j.e);
- for(;d<=e&&d<=h;d.setDate(d.getDate()+1)){var w=d.getDay(),x=k(d),frei=false;if(w==0||w==6)continue;
-  for(var i=0;i<fr.length;i++)if(x>=fr[i][0]&&x<=fr[i][1]){frei=true;break;}if(!frei)c++;}return c;}
-function upd(){var t=new Date(),h=new Date(t.getFullYear(),t.getMonth(),t.getDate()),tot=0,parts=[],cur=0,curN='';
- JAHRE.forEach(function(j){var c=zaehle(j,h);tot+=c;parts.push(c);if(h>=D(j.s)){cur=c;curN=j.n;}});
- document.getElementById('tot').textContent=tot+'.';
- document.getElementById('det').textContent=parts.join(' + ');
- document.getElementById('l2').textContent='Schultag im Schuljahr '+curN;
- document.getElementById('cur').textContent=cur+'.';}
+function istSchultag(j,d){var w=d.getDay(),x=k(d);if(w==0||w==6)return false;
+ var fr=j.f.concat(AUTONOM);for(var i=0;i<fr.length;i++)if(x>=k(D(fr[i][0]))&&x<=k(D(fr[i][1])))return false;return true;}
+function upd(){
+ var t=new Date(),h=new Date(t.getFullYear(),t.getMonth(),t.getDate()),tot=0,cur=0,curN='',heuteSchule=false;
+ JAHRE.forEach(function(j){var c=0;for(var d=D(j.s);d<=D(j.e)&&d<=h;d.setDate(d.getDate()+1))if(istSchultag(j,d))c++;
+  tot+=c;if(h>=D(j.s)){cur=c;curN=j.n;if(h<=D(j.e))heuteSchule=istSchultag(j,h);}});
+ var n=Math.max(tot,1);
+ document.getElementById('heute').innerHTML=(heuteSchule?'Heute ist der':'Heute ist schulfrei.<br>Zuletzt war der')+'<br><strong>'+n+'.</strong> Schultag';
+ var s=String(n).padStart(3,'0');
+ document.getElementById('h').textContent=s[s.length-3];
+ document.getElementById('z').textContent=s[s.length-2];
+ document.getElementById('e').textContent=s[s.length-1];
+ var start=Math.floor((n-1)/100)*100+1,ende=start+99,g=document.getElementById('g'),html='';
+ for(var i=start;i<=ende;i++)html+='<div class="'+(i<n?'v':i==n?'t':'')+'">'+i+'</div>';
+ g.innerHTML=html;
+ document.getElementById('ziel').textContent=ende;
+ var rest=ende-n;
+ document.getElementById('zieltext').textContent=rest>0?('Noch '+rest+' Schultage bis '+ende+'!'):'Geschafft!';
+ document.getElementById('jahr').textContent=cur+'. Schultag im Schuljahr '+curN;
+}
 upd();setInterval(upd,600000);
 </script></body></html>
