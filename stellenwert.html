@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Zahlen legen – Hunderter, Zehner, Einer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2b2b;--h:#d6336c;--z:#1c7ed6;--e:#2f9e44;--u:16px;--line:rgba(255,255,255,.75)}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);font-family:Andika,"Comic Sans MS",system-ui,sans-serif;touch-action:none;overflow:hidden}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:1.2vmin;padding:1.5vmin}
+header{display:flex;align-items:center;justify-content:space-between;gap:2vmin}
+.ziel{display:flex;align-items:baseline;gap:2vmin}
+.ziel .lbl{font-size:4vmin;color:#555}
+.ziel .zahl{font-size:11vmin;font-weight:700;line-height:1;letter-spacing:.05em}
+.zahl .dh{color:var(--h)}.zahl .dz{color:var(--z)}.zahl .de{color:var(--e)}
+.btns{display:flex;gap:1.2vmin;flex-wrap:wrap;justify-content:flex-end}
+button,select{font:inherit;font-size:3vmin;padding:1vmin 2vmin;border-radius:1.5vmin;border:.3vmin solid var(--ink);background:#fff;cursor:pointer}
+button.an{background:#fff3bf}
+button.gross{font-size:4vmin;font-weight:700;background:#f59f00;color:#fff;border-color:#e67700}
+#feld{position:relative;display:grid;grid-template-columns:47fr 33fr 20fr;border:.35vmin solid var(--ink);border-radius:2vmin;overflow:hidden;min-height:0}
+#feld.ueber{box-shadow:inset 0 0 0 .8vmin #ffe066}
+.col{display:flex;flex-direction:column;align-items:center;min-height:0;border-left:.3vmin dashed #bbb;padding:1vmin}
+.col:first-child{border-left:0}
+.col.H{background:#fff0f6}.col.Z{background:#e7f5ff}.col.E{background:#ebfbee}
+.kopf{font-size:3.2vmin;font-weight:700;padding:.3vmin 2vmin;border-radius:1vmin;color:#fff}
+.H .kopf{background:var(--h)}.Z .kopf{background:var(--z)}.E .kopf{background:var(--e)}
+.anz{font-size:4vmin;font-weight:700;height:5vmin;visibility:hidden}
+.hilfe .anz{visibility:visible}
+.H .anz{color:var(--h)}.Z .anz{color:var(--z)}.E .anz{color:var(--e)}
+.stapel{flex:1;display:flex;flex-wrap:wrap;align-content:center;justify-content:center}
+.col.H .stapel{width:calc(3*11.2*var(--u))}
+.col.Z .stapel{width:calc(9*1.9*var(--u))}
+.col.E .stapel{width:calc(3*2.6*var(--u))}
+.hit{display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
+.hit.H{padding:calc(.6*var(--u))}.hit.Z{padding:calc(.45*var(--u))}.hit.E{padding:calc(.8*var(--u))}
+.p{border:2px solid rgba(0,0,0,.45);border-radius:3px;box-shadow:0 2px 3px rgba(0,0,0,.2)}
+.p.H{width:calc(10*var(--u));height:calc(10*var(--u));background-color:var(--h);
+ background-image:linear-gradient(to right,var(--line) 1px,transparent 1px),linear-gradient(to bottom,var(--line) 1px,transparent 1px);background-size:var(--u) var(--u)}
+.p.Z{width:var(--u);height:calc(10*var(--u));background-color:var(--z);
+ background-image:linear-gradient(to bottom,var(--line) 1px,transparent 1px);background-size:var(--u) var(--u)}
+.p.E{width:var(--u);height:var(--u);background-color:var(--e)}
+footer{display:flex;align-items:flex-end;justify-content:space-between;gap:2vmin}
+.quellen{display:flex;align-items:flex-end;gap:3vmin}
+.quelle{display:flex;flex-direction:column;align-items:center;gap:.5vmin;padding:.8vmin 1.5vmin;border:.3vmin solid #ccc;border-radius:1.5vmin;background:#fafafa}
+.quelle span{font-size:3.4vmin;font-weight:700}
+.quelle.H span{color:var(--h)}.quelle.Z span{color:var(--z)}.quelle.E span{color:var(--e)}
+.quelle .hit.E{padding:calc(1.6*var(--u))}
+.rechts{display:flex;gap:1.5vmin;align-items:center}
+#summe{font-size:3.6vmin;color:#555;visibility:hidden}
+.hilfe #summe{visibility:visible}
+.geist{position:fixed;left:0;top:0;pointer-events:none;z-index:50;transform-origin:center;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+#msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;transition:.25s;
+ background:#fff;border:.5vmin solid var(--ink);border-radius:2.5vmin;padding:2.5vmin 4vmin;font-size:5vmin;text-align:center;max-width:85%;box-shadow:0 1vmin 3vmin rgba(0,0,0,.25);z-index:20}
+#msg.zeigen{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#msg.gut{border-color:#2f9e44;background:#ebfbee}
+#msg.fast{border-color:#f59f00;background:#fff9db}
+#msg small{display:block;font-size:3.4vmin;margin-top:1vmin;color:#444}
+</style></head><body>
+<div class="app" id="app">
+ <header>
+  <div class="ziel"><span class="lbl">Lege die Zahl</span><span class="zahl" id="ziel">–</span></div>
+  <div class="btns">
+   <button id="bSchultag">Schultag</button>
+   <select id="raum" aria-label="Zahlenraum"><option value="20">bis 20</option><option value="100">bis 100</option><option value="1000" selected>bis 1000</option></select>
+   <button id="bNeu">Neue Zahl</button>
+   <button id="bHilfe">Zählhilfe</button>
+  </div>
+ </header>
+ <main id="feld">
+  <div class="col H"><div class="kopf">Hunderter</div><div class="stapel" id="sH"></div><div class="anz" id="aH">0</div></div>
+  <div class="col Z"><div class="kopf">Zehner</div><div class="stapel" id="sZ"></div><div class="anz" id="aZ">0</div></div>
+  <div class="col E"><div class="kopf">Einer</div><div class="stapel" id="sE"></div><div class="anz" id="aE">0</div></div>
+  <div id="msg"></div>
+ </main>
+ <footer>
+  <div class="quellen">
+   <div class="quelle H"><div class="hit H" data-t="H" data-q="1"><div class="p H"></div></div><span>100</span></div>
+   <div class="quelle Z"><div class="hit Z" data-t="Z" data-q="1"><div class="p Z"></div></div><span>10</span></div>
+   <div class="quelle E"><div class="hit E" data-t="E" data-q="1"><div class="p E"></div></div><span>1</span></div>
+  </div>
+  <div class="rechts"><span id="summe"></span><button id="bLeer">Alles weg</button><button id="bCheck" class="gross">Fertig!</button></div>
+ </footer>
+</div>
+<script>
+/* ---------- Schultag (Volksschule OÖ, gezählt ab 9.9.2024) ---------- */
+var JAHRE=[
+ {s:'2024-09-09',e:'2025-07-04',f:[['2024-10-26','2024-11-02'],['2024-12-08','2024-12-08'],['2024-12-21','2025-01-06'],['2025-02-15','2025-02-23'],['2025-04-12','2025-04-21'],['2025-05-01','2025-05-01'],['2025-05-04','2025-05-04'],['2025-05-29','2025-05-29'],['2025-06-07','2025-06-09'],['2025-06-19','2025-06-19']]},
+ {s:'2025-09-08',e:'2026-07-10',f:[['2025-10-26','2025-11-02'],['2025-12-08','2025-12-08'],['2025-12-24','2026-01-06'],['2026-02-14','2026-02-22'],['2026-03-28','2026-04-06'],['2026-05-01','2026-05-01'],['2026-05-04','2026-05-04'],['2026-05-14','2026-05-14'],['2026-05-23','2026-05-25'],['2026-06-04','2026-06-04']]},
+ {s:'2026-09-14',e:'2027-07-09',f:[['2026-10-24','2026-11-02'],['2026-12-08','2026-12-08'],['2026-12-24','2027-01-06'],['2027-02-13','2027-02-21'],['2027-03-20','2027-03-29'],['2027-05-01','2027-05-01'],['2027-05-04','2027-05-04'],['2027-05-06','2027-05-06'],['2027-05-15','2027-05-17'],['2027-05-27','2027-05-27']]}];
+var AUTONOM=[];
+function D(s){var p=s.split('-');return new Date(+p[0],p[1]-1,+p[2]);}
+function k(d){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+function schultag(){var t=new Date(),h=new Date(t.getFullYear(),t.getMonth(),t.getDate()),n=0;
+ JAHRE.forEach(function(j){var fr=j.f.concat(AUTONOM);for(var d=D(j.s);d<=D(j.e)&&d<=h;d.setDate(d.getDate()+1)){var w=d.getDay(),x=k(d),frei=w==0||w==6;
+  for(var i=0;!frei&&i<fr.length;i++)if(x>=k(D(fr[i][0]))&&x<=k(D(fr[i][1])))frei=true;if(!frei)n++;}});return Math.min(Math.max(n,1),999);}
+
+/* ---------- Spiel ---------- */
+var WERT={H:100,Z:10,E:1},NAME={H:'Hunderter',Z:'Zehner',E:'Einer'},MAX=9;
+var anzahl={H:0,Z:0,E:0},ziel=1,$=function(i){return document.getElementById(i);};
+function zeigeZiel(){var s=String(ziel),c=['de','dz','dh'],o='';for(var i=0;i<s.length;i++)o+='<span class="'+c[s.length-1-i]+'">'+s[i]+'</span>';$('ziel').innerHTML=o;}
+function setZiel(n){ziel=n;zeigeZiel();leeren();}
+function stueck(t){var w=document.createElement('div');w.className='hit '+t;w.dataset.t=t;w.innerHTML='<div class="p '+t+'"></div>';return w;}
+function render(){['H','Z','E'].forEach(function(t){var s=$('s'+t);while(s.children.length<anzahl[t])s.appendChild(stueck(t));while(s.children.length>anzahl[t])s.removeChild(s.lastChild);$('a'+t).textContent=anzahl[t]+' '+t;});
+ $('summe').textContent='gelegt: '+summe();}
+function summe(){return anzahl.H*100+anzahl.Z*10+anzahl.E;}
+function leeren(){anzahl={H:0,Z:0,E:0};render();}
+var msgT;function meldung(html,art,ms){var m=$('msg');m.className='zeigen '+(art||'');m.innerHTML=html;clearTimeout(msgT);msgT=setTimeout(function(){m.className='';},ms||2600);}
+
+/* Größe der Einheit an das Fenster anpassen */
+function groesse(){var f=$('feld').getBoundingClientRect(),cw=f.width*.47,ch=f.height-f.height*.2;
+ var u=Math.min((cw-20)/(3*11.2),(ch)/(3*11.2),(f.width*.33-20)/(9*1.9),(ch)/12);
+ document.documentElement.style.setProperty('--u',Math.max(5,Math.floor(u))+'px');}
+window.addEventListener('resize',groesse);
+
+/* Ziehen mit Maus und Finger */
+var zug=null;
+document.addEventListener('pointerdown',function(ev){var h=ev.target.closest('.hit');if(!h)return;ev.preventDefault();
+ var t=h.dataset.t,ausFeld=!h.dataset.q,r=h.getBoundingClientRect(),g=h.cloneNode(true);g.classList.add('geist');g.style.width=r.width+'px';g.style.height=r.height+'px';document.body.appendChild(g);
+ if(ausFeld){anzahl[t]--;render();}
+ zug={t:t,g:g,dx:ev.clientX-r.left,dy:ev.clientY-r.top,ausFeld:ausFeld};bewege(ev);});
+document.addEventListener('pointermove',function(ev){if(zug){ev.preventDefault();bewege(ev);}});
+function bewege(ev){zug.g.style.transform='translate('+(ev.clientX-zug.dx)+'px,'+(ev.clientY-zug.dy)+'px) scale(1.06)';
+ var f=$('feld').getBoundingClientRect(),drin=ev.clientX>=f.left&&ev.clientX<=f.right&&ev.clientY>=f.top&&ev.clientY<=f.bottom;$('feld').classList.toggle('ueber',drin);zug.drin=drin;}
+function loslassen(){if(!zug)return;var t=zug.t;zug.g.remove();$('feld').classList.remove('ueber');
+ if(zug.drin){if(anzahl[t]>=MAX){var hin=t=='E'?'Tausche 10 Einer gegen 1 Zehner!':t=='Z'?'Tausche 10 Zehner gegen 1 Hunderter!':'Mehr als 9 Hunderter brauchst du nicht.';
+   meldung('Mehr als 9 '+NAME[t]+' passen nicht.<small>'+hin+'</small>','fast',3200);}else anzahl[t]++;}
+ zug=null;render();}
+document.addEventListener('pointerup',loslassen);document.addEventListener('pointercancel',loslassen);
+
+/* Prüfen */
+$('bCheck').onclick=function(){var s=summe(),zh=Math.floor(ziel/100),zz=Math.floor(ziel/10)%10,ze=ziel%10;
+ if(s===ziel){meldung('Super! &#127881;<small>'+ziel+' = '+zh+' H + '+zz+' Z + '+ze+' E</small>','gut',4000);return;}
+ if(s===0){meldung('Zieh die Teile von unten ins Feld!','fast');return;}
+ var falsch=[];if(anzahl.H!==zh)falsch.push('Hundertern');if(anzahl.Z!==zz)falsch.push('Zehnern');if(anzahl.E!==ze)falsch.push('Einern');
+ meldung((s<ziel?'Da fehlt noch etwas.':'Das ist zu viel.')+'<small>Schau nochmal bei den '+falsch.join(' und den ')+'.</small>','fast',3500);};
+$('bLeer').onclick=leeren;
+$('bHilfe').onclick=function(){var a=$('app').classList.toggle('hilfe');this.classList.toggle('an',a);};
+$('bSchultag').onclick=function(){setZiel(schultag());};
+$('bNeu').onclick=function(){var max=+$('raum').value,n,alt=ziel;do{n=1+Math.floor(Math.random()*(max-1));}while(n===alt);setZiel(n);};
+
+groesse();setZiel(schultag());
+</script></body></html>
