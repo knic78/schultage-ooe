@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Froschfeld 1000</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2b2b;--line:#2b2b2b;--h:#d6336c;--z:#1c7ed6;--e:#2f9e44;--hit:#ebfbee;--miss:#ffe3e3;--c:20px}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);font-family:Andika,"Comic Sans MS",system-ui,sans-serif;overflow:hidden}
+.app{height:100%;display:grid;grid-template-rows:auto auto 1fr;gap:1vmin;padding:1.2vmin}
+header{display:flex;align-items:center;gap:1.2vmin;flex-wrap:wrap}
+h1{margin:0 auto 0 0;font-size:3.6vmin}
+button,select{font:inherit;font-size:2.6vmin;padding:.6vmin 1.6vmin;border-radius:1.2vmin;border:.3vmin solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+button.an{background:#fff3bf}
+.zaehler{display:flex;align-items:center;gap:.6vmin;font-size:3vmin;font-weight:700}
+.zaehler svg{width:4.2vmin;height:4.2vmin}
+.info{display:flex;align-items:center;gap:2vmin;min-height:7vmin;padding:.4vmin 1.6vmin;border:.3vmin solid var(--ink);border-radius:1.5vmin;font-size:3.4vmin}
+.info b{font-size:4.6vmin}
+.dh{color:var(--h)}.dz{color:var(--z)}.de{color:var(--e)}
+.ziel{font-size:5vmin;font-weight:700;border:.35vmin solid var(--ink);border-radius:1vmin;padding:0 1.6vmin;line-height:1.25}
+.leise{color:#666}
+#feld{min-height:0;display:flex;align-items:center;justify-content:center}
+#bloecke{display:grid;gap:calc(var(--c)*.55)}
+.block .kopf{display:flex;justify-content:space-between;align-items:center;font-size:calc(var(--c)*.42);color:#666;height:calc(var(--c)*.75)}
+.block .kopf button{font-size:calc(var(--c)*.36);padding:0 calc(var(--c)*.25);border-width:1px;border-radius:4px}
+.raster{display:grid;grid-template-columns:repeat(10,var(--c));grid-auto-rows:var(--c);border-top:2px solid var(--line);border-left:2px solid var(--line);background:#fff}
+.f{border:0;border-radius:0;padding:0;margin:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;color:#000;
+ font:inherit;font-size:calc(var(--c)*.36);display:flex;align-items:center;justify-content:center;cursor:pointer;font-variant-numeric:tabular-nums;touch-action:manipulation}
+.f:nth-child(10n){border-right-width:2px}.f:nth-child(n+91){border-bottom-width:2px}
+.f svg{display:none;width:88%;height:88%}
+.f.frosch{background:var(--hit)}.f.frosch span{display:none}
+.f.frosch svg{display:block;animation:hops .35s cubic-bezier(.3,1.6,.5,1)}
+.f.falsch{background:var(--miss);animation:wackel .35s}
+@keyframes hops{from{transform:scale(.2) translateY(30%)}to{transform:none}}
+@keyframes wackel{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){.f.frosch svg,.f.falsch{animation:none}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="frosch" viewBox="0 0 100 100">
+ <ellipse cx="50" cy="66" rx="38" ry="28" fill="#40a84f"/><ellipse cx="50" cy="72" rx="24" ry="16" fill="#bfe6a9"/>
+ <circle cx="30" cy="36" r="15" fill="#40a84f"/><circle cx="70" cy="36" r="15" fill="#40a84f"/>
+ <circle cx="30" cy="35" r="10" fill="#fff"/><circle cx="70" cy="35" r="10" fill="#fff"/>
+ <circle cx="32" cy="37" r="5.5" fill="#111"/><circle cx="68" cy="37" r="5.5" fill="#111"/>
+ <circle cx="34" cy="34.5" r="1.8" fill="#fff"/><circle cx="70" cy="34.5" r="1.8" fill="#fff"/>
+ <path d="M36 58 Q50 70 64 58" stroke="#1d4f25" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+ <ellipse cx="25" cy="58" rx="6" ry="3.5" fill="#f4a3a8"/><ellipse cx="75" cy="58" rx="6" ry="3.5" fill="#f4a3a8"/>
+ <ellipse cx="22" cy="90" rx="12" ry="5" fill="#2b7a37"/><ellipse cx="78" cy="90" rx="12" ry="5" fill="#2b7a37"/>
+</symbol></svg>
+<div class="app">
+ <header>
+  <h1>Froschfeld 1000</h1>
+  <button id="bFrei" class="an">Frei klicken</button>
+  <button id="bFinde">Finde die Zahl</button>
+  <select id="ansicht" aria-label="Ansicht"><option value="alle">Alle 1000</option></select>
+  <span class="zaehler"><svg><use href="#frosch"/></svg><span id="anz">0</span></span>
+  <button id="bLeer">Alle Frösche weg</button>
+ </header>
+ <div class="info" id="info"><span class="leise">Tippe auf eine Zahl – dann kommt ein Frosch.</span></div>
+ <main id="feld"><div id="bloecke"></div></main>
+</div>
+<script>
+var $=function(i){return document.getElementById(i);},bloecke=$('bloecke'),ansicht=$('ansicht'),info=$('info');
+var froesche={},anzahl=0,modus='frei',ziel=null;
+
+/* 10 Hunderterblöcke aufbauen */
+for(var b=0;b<10;b++){
+ var von=b*100+1,bis=b*100+100,o=document.createElement('option');o.value=b;o.textContent=von+' – '+bis;ansicht.appendChild(o);
+ var html='<div class="kopf"><span>'+von+' – '+bis+'</span><button data-gross="'+b+'">groß</button></div><div class="raster">';
+ for(var n=von;n<=bis;n++)html+='<button class="f" data-n="'+n+'"><span>'+n+'</span><svg><use href="#frosch"/></svg></button>';
+ var d=document.createElement('section');d.className='block';d.dataset.b=b;d.innerHTML=html+'</div>';bloecke.appendChild(d);
+}
+function feldVon(n){return bloecke.querySelector('.f[data-n="'+n+'"]');}
+
+/* Feldgröße an das Fenster anpassen (wichtig für das Classroomscreen-Fenster) */
+function groesse(){
+ var r=$('feld').getBoundingClientRect(),einzeln=ansicht.value!=='alle',best=0,bestS=1;
+ var spalten=einzeln?[1]:[1,2,5,10];
+ spalten.forEach(function(s){var zeilen=einzeln?1:10/s;
+  var c=Math.min(r.width/(s*10+(s-1)*.55+.2),r.height/(zeilen*10.75+(zeilen-1)*.55+.2));
+  if(c>best){best=c;bestS=s;}});
+ document.documentElement.style.setProperty('--c',Math.max(8,Math.floor(best))+'px');
+ bloecke.style.gridTemplateColumns='repeat('+bestS+',auto)';
+}
+window.addEventListener('resize',groesse);
+
+function stellenwert(n,vorne){
+ if(n===1000)return (vorne||'')+'<b>1000</b> = 1 Tausender';
+ return (vorne||'')+'<b>'+n+'</b> = <span class="dh">'+Math.floor(n/100)+' H</span> · <span class="dz">'+Math.floor(n/10)%10+' Z</span> · <span class="de">'+n%10+' E</span>';
+}
+function setze(n,an){
+ var f=feldVon(n);if(!!froesche[n]===an)return;
+ f.classList.toggle('frosch',an);if(an){froesche[n]=1;anzahl++;}else{delete froesche[n];anzahl--;}
+ $('anz').textContent=anzahl;
+}
+function neueZahl(){
+ var frei=[],v=ansicht.value,a=v==='alle'?1:v*100+1,e=v==='alle'?1000:v*100+100;
+ for(var n=a;n<=e;n++)if(!froesche[n])frei.push(n);
+ if(!frei.length){info.innerHTML='Alle Felder haben einen Frosch! &#127881;';ziel=null;return;}
+ ziel=frei[Math.floor(Math.random()*frei.length)];
+ info.innerHTML='Finde: <span class="ziel">'+ziel+'</span><span class="leise" id="tipp"></span>';
+}
+
+bloecke.addEventListener('click',function(ev){
+ var g=ev.target.closest('[data-gross]');if(g){ansicht.value=g.dataset.gross;wechsle();return;}
+ var f=ev.target.closest('.f');if(!f)return;var n=+f.dataset.n;
+ if(modus==='frei'){setze(n,!froesche[n]);info.innerHTML=stellenwert(n);return;}
+ if(ziel===null)return;
+ if(n===ziel){setze(n,true);info.innerHTML=stellenwert(n,'Richtig! ');ziel=null;setTimeout(neueZahl,1600);return;}
+ f.classList.remove('falsch');void f.offsetWidth;f.classList.add('falsch');setTimeout(function(){f.classList.remove('falsch');},600);
+ var zh=Math.floor((ziel-1)/100),fh=Math.floor((n-1)/100);
+ $('tipp').textContent=zh!==fh?' Das war '+n+'. Schau im Hunderter '+(zh*100+1)+' – '+(zh*100+100)+'.'
+  :' Das war '+n+'. Richtiger Hunderter! Jetzt '+(n<ziel?'weiter nach unten/rechts.':'weiter nach oben/links.');
+});
+
+function wechsle(){
+ var v=ansicht.value;
+ bloecke.querySelectorAll('.block').forEach(function(b){b.hidden=v!=='alle'&&b.dataset.b!==v;});
+ bloecke.querySelectorAll('[data-gross]').forEach(function(b){b.style.visibility=v==='alle'?'visible':'hidden';});
+ groesse();
+ if(modus==='finde'&&ziel!==null&&v!=='alle'&&(ziel<=v*100||ziel>v*100+100))neueZahl();
+}
+ansicht.onchange=wechsle;
+function setzeModus(m){modus=m;$('bFrei').classList.toggle('an',m==='frei');$('bFinde').classList.toggle('an',m==='finde');
+ if(m==='finde')neueZahl();else{ziel=null;info.innerHTML='<span class="leise">Tippe auf eine Zahl – dann kommt ein Frosch. Nochmal tippen holt die Zahl zurück.</span>';}}
+$('bFrei').onclick=function(){setzeModus('frei');};
+$('bFinde').onclick=function(){setzeModus('finde');};
+$('bLeer').onclick=function(){Object.keys(froesche).forEach(function(n){setze(+n,false);});setzeModus(modus);};
+groesse();
+</script></body></html>
