@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tageswetter Linz-Land</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --tile:#bfe0ee; --tile-border:#8fb9cc; --label:#fff; --ink:#111; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:100%; height:100%; background:transparent; overflow:hidden; font-family:'Andika',system-ui,sans-serif; }
+  #wrap { width:100%; height:100%; display:flex; gap:3vmin; padding:2vmin; }
+  #wrap.vertical { flex-direction:column; }
+  .card { flex:1; min-width:0; min-height:0; background:#cfe6f1; border:1px dashed var(--tile-border);
+          border-radius:1.5vmin; padding:3vmin; display:flex; flex-direction:column; gap:3vmin; cursor:pointer;
+          box-shadow:0 0 0 0.6vmin #e8f3f8 inset; position:relative; user-select:none; }
+  .pic { flex:1; min-height:0; background:var(--tile); border:1px solid #6fa5bd; border-radius:2vmin;
+         display:flex; align-items:center; justify-content:center; padding:4%; }
+  .pic svg { width:100%; height:100%; }
+  .lbl { background:var(--label); border-radius:2.5vmin; text-align:center; color:var(--ink);
+         line-height:1.15; padding:1.5vmin 1vmin; white-space:nowrap; overflow:hidden; }
+  .num { position:absolute; top:4.5vmin; right:5vmin; font-weight:700; color:#235; opacity:.85; }
+  .manual::after { content:"✋"; position:absolute; bottom:1vmin; right:1.5vmin; font-size:3.5vmin; opacity:.6; }
+  #info { position:fixed; left:1vmin; bottom:0.5vmin; font:1.8vmin system-ui,sans-serif; color:#355; opacity:.55; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="card" id="cTemp" title="Klicken = manuell wechseln">
+    <div class="pic" id="pTemp"></div>
+    <div class="lbl" id="lTemp">…</div>
+    <div class="num" id="nTemp"></div>
+  </div>
+  <div class="card" id="cWx" title="Klicken = manuell wechseln">
+    <div class="pic" id="pWx"></div>
+    <div class="lbl" id="lWx">…</div>
+  </div>
+</div>
+<div id="info"></div>
+
+<script>
+/* ===== Einstellungen über URL-Parameter =====
+   ?lat=48.22&lon=14.24&ort=Traun   Standort (Standard: Linz-Land / Traun)
+   ?layout=vertical|horizontal      Anordnung (Standard: automatisch nach Seitenverhältnis)
+   ?zahl=1                          Temperatur zusätzlich als Zahl (°C) anzeigen
+   ?nur=wetter | ?nur=temp          nur eine Karte anzeigen
+   ?von=7&bis=13                    Schulzeit (Stunden), aus der das Tageswetter berechnet wird
+*/
+const P = new URLSearchParams(location.search);
+const LAT = parseFloat(P.get('lat')) || 48.2206;
+const LON = parseFloat(P.get('lon')) || 14.2397;
+const ORT = P.get('ort') || 'Linz-Land';
+const SHOW_NUM = P.get('zahl') === '1';
+const FROM = parseInt(P.get('von') ?? '7', 10);
+const TO   = parseInt(P.get('bis') ?? '13', 10);
+const ONLY = P.get('nur');
+
+/* ===== Bildchen (eigene SVGs) ===== */
+const sun = (cx,cy,r)=>{let rays='';for(let i=0;i<12;i++){const a=i*Math.PI/6,
+  x1=cx+Math.cos(a)*(r+6),y1=cy+Math.sin(a)*(r+6),x2=cx+Math.cos(a)*(r+22),y2=cy+Math.sin(a)*(r+22);
+  rays+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f5a800" stroke-width="8" stroke-linecap="round"/>`;}
+  return `${rays}<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gSun)" stroke="#e59a00" stroke-width="4"/>`;};
+const cloud = (x,y,s,fill='#ffffff',stroke='#8aa4b5')=>`<g transform="translate(${x} ${y}) scale(${s})">
+  <path d="M30 80 Q0 80 4 58 Q8 38 32 42 Q36 14 66 14 Q94 14 100 40 Q126 34 132 58 Q136 80 110 80 Z"
+   fill="${fill}" stroke="${stroke}" stroke-width="5" stroke-linejoin="round"/></g>`;
+const defs = `<defs><radialGradient id="gSun" cx="40%" cy="38%" r="65%"><stop offset="0" stop-color="#fff3a0"/>
+  <stop offset=".6" stop-color="#ffd23a"/><stop offset="1" stop-color="#f7b500"/></radialGradient></defs>`;
+const drop=(x,y)=>`<path d="M${x} ${y} q-8 14 0 18 q8 -4 0 -18z" fill="#2f86e0" stroke="#1f63a8" stroke-width="2"/>`;
+const flake=(x,y)=>`<g stroke="#2a7fd0" stroke-width="5" stroke-linecap="round" transform="translate(${x} ${y})">
+  <line x1="-10" y1="0" x2="10" y2="0"/><line x1="-5" y1="-9" x2="5" y2="9"/><line x1="-5" y1="9" x2="5" y2="-9"/></g>`;
+const svg = inner=>`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">${defs}${inner}</svg>`;
+
+const WX = {
+  sonnig:      {t:'sonnig',          i:()=>svg(sun(100,100,52))},
+  heiter:      {t:'heiter',          i:()=>svg(sun(78,78,40)+cloud(70,100,0.85))},
+  bewoelkt:    {t:'bewölkt',         i:()=>svg(sun(70,66,30)+cloud(14,50,0.9,'#f2f5f7')+cloud(58,88,0.95))},
+  bedeckt:     {t:'bedeckt',         i:()=>svg(cloud(10,40,0.95,'#c9d3da','#6f8796')+cloud(52,82,1,'#dfe5e9','#6f8796'))},
+  nebelig:     {t:'nebelig',         i:()=>svg(cloud(30,26,0.95,'#e3e8eb','#8a9aa4')+
+                 [110,130,150,170].map((y,k)=>`<line x1="${30+k%2*14}" y1="${y}" x2="${170-k%2*14}" y2="${y}" stroke="#9aa8b0" stroke-width="9" stroke-linecap="round"/>`).join(''))},
+  regnerisch:  {t:'regnerisch',      i:()=>svg(cloud(30,20,1,'#d5dde3','#5f7a8c')+[50,82,114,146].map((x,k)=>drop(x,120+k%2*22)).join('')+drop(66,168)+drop(130,168))},
+  regenschauer:{t:'Regenschauer',    i:()=>svg(sun(150,56,28)+cloud(18,40,1,'#e6ecf0','#5f7a8c')+drop(60,140)+drop(95,155)+drop(130,140))},
+  schnee:      {t:'Schnee',          i:()=>svg(cloud(30,20,1,'#dfe6eb','#5f7a8c')+
+                 [[54,130],[100,124],[146,130],[76,168],[124,168]].map(([x,y])=>flake(x,y)).join(''))},
+  schneeregen: {t:'Schneeregen',     i:()=>svg(cloud(30,20,1,'#dfe6eb','#5f7a8c')+flake(60,135)+drop(98,125)+flake(140,135)+drop(80,162)+flake(120,170))},
+  gewitter:    {t:'Gewitter',        i:()=>svg(cloud(26,14,1.05,'#8d9ba6','#4a5a66')+
+                 `<path d="M104 96 L78 146 H100 L86 192 L132 128 H108 L124 96 Z" fill="#ffd400" stroke="#d08c00" stroke-width="4" stroke-linejoin="round"/>`+drop(48,130)+drop(150,130))},
+};
+const WX_ORDER = Object.keys(WX);
+
+/* Thermometer mit Füllstand */
+function thermo(level,color){ // level 0..1
+  const top=30,bot=150,y=bot-(bot-top)*level;
+  let ticks='';for(let t=40;t<=145;t+=10)ticks+=`<line x1="118" y1="${t}" x2="${t%20?128:134}" y2="${t}" stroke="#6b7f8c" stroke-width="2"/>`;
+  return svg(`<rect x="62" y="12" width="76" height="176" rx="12" fill="#e9f6fb" stroke="#7aa7bb" stroke-width="3"/>
+   <rect x="88" y="22" width="24" height="140" rx="12" fill="#fff" stroke="#9fb6c2" stroke-width="3"/>
+   <rect x="94" y="${y}" width="12" height="${bot-y+12}" rx="6" fill="${color}"/>
+   <circle cx="100" cy="166" r="17" fill="${color}" stroke="#7a95a3" stroke-width="3"/>
+   <circle cx="94" cy="160" r="5" fill="#fff" opacity=".6"/>${ticks}`);
+}
+const TEMP = [ // Grenzen nach Tageshöchsttemperatur
+  {max:0,   t:'eisig', c:'#7fb7ff', l:.08},
+  {max:8,   t:'kalt',  c:'#3d9be0', l:.25},
+  {max:16,  t:'kühl',  c:'#36b2e6', l:.42},
+  {max:24,  t:'warm',  c:'#f59a23', l:.65},
+  {max:99,  t:'heiß',  c:'#e53b2f', l:.9},
+];
+
+/* ===== Wetterdaten → Kategorie ===== */
+function cat(code){
+  if(code>=95) return 'gewitter';
+  if([71,73,75,77,85,86].includes(code)) return 'schnee';
+  if([56,57,66,67].includes(code)) return 'schneeregen';
+  if(code>=80 && code<=82) return 'regenschauer';
+  if(code>=51 && code<=65) return 'regnerisch';
+  if(code===45||code===48) return 'nebelig';
+  if(code===3) return 'bedeckt';
+  if(code===2) return 'bewoelkt';
+  if(code===1) return 'heiter';
+  return 'sonnig';
+}
+function dayWeather(hourly, dateStr){
+  const idx = hourly.time.map((t,i)=>[t,i]).filter(([t])=>t.startsWith(dateStr) && +t.slice(11,13)>=FROM && +t.slice(11,13)<=TO).map(x=>x[1]);
+  const cats = idx.map(i=>cat(hourly.weather_code[i]));
+  const n = k=>cats.filter(c=>c===k).length;
+  if(n('gewitter')>=1) return 'gewitter';
+  if(n('schnee')>=2) return 'schnee';
+  if(n('schneeregen')>=2) return 'schneeregen';
+  if(n('regnerisch')>=3) return 'regnerisch';
+  if(n('regnerisch')+n('regenschauer')>=2) return 'regenschauer';
+  if(n('nebelig')>=3) return 'nebelig';
+  const cc = idx.reduce((s,i)=>s+hourly.cloud_cover[i],0)/Math.max(idx.length,1);
+  return cc<20?'sonnig':cc<50?'heiter':cc<80?'bewoelkt':'bedeckt';
+}
+
+/* ===== Anzeige ===== */
+const $=id=>document.getElementById(id);
+let state={wx:null,tmax:null,manualWx:null,manualT:null};
+function render(){
+  const wx = state.manualWx ?? state.wx;
+  if(wx){ $('pWx').innerHTML=WX[wx].i(); $('lWx').textContent=WX[wx].t; }
+  let ti = state.manualT;
+  if(ti==null && state.tmax!=null) ti = TEMP.findIndex(x=>state.tmax<=x.max);
+  if(ti!=null){ const T=TEMP[ti]; $('pTemp').innerHTML=thermo(T.l,T.c); $('lTemp').textContent=T.t; }
+  $('nTemp').textContent = SHOW_NUM && state.tmax!=null && state.manualT==null ? Math.round(state.tmax)+' °C' : '';
+  $('cWx').classList.toggle('manual',state.manualWx!=null);
+  $('cTemp').classList.toggle('manual',state.manualT!=null);
+  fit();
+}
+function fit(){
+  const w=innerWidth,h=innerHeight;
+  const L=P.get('layout');
+  const vertical = L ? L==='vertical' : (ONLY ? false : h>w);
+  $('wrap').className = vertical?'vertical':'';
+  if(ONLY==='wetter') $('cTemp').style.display='none';
+  if(ONLY==='temp')   $('cWx').style.display='none';
+  const cards = ONLY?1:2;
+  const cw = vertical? w : w/cards, ch = vertical? h/cards : h;
+  const fs = Math.max(12, Math.min(cw*0.17, ch*0.13));
+  document.querySelectorAll('.lbl').forEach(e=>e.style.fontSize=fs+'px');
+  $('nTemp').style.fontSize=(fs*0.6)+'px';
+}
+addEventListener('resize',fit);
+
+/* Klick = manuell durchschalten (z. B. wenn die Klasse aus dem Fenster schaut); Doppelklick = zurück auf automatisch */
+$('cWx').addEventListener('click',()=>{const cur=state.manualWx??state.wx??'sonnig';
+  state.manualWx=WX_ORDER[(WX_ORDER.indexOf(cur)+1)%WX_ORDER.length];render();});
+$('cTemp').addEventListener('click',()=>{let cur=state.manualT;
+  if(cur==null) cur = state.tmax!=null? TEMP.findIndex(x=>state.tmax<=x.max):-1;
+  state.manualT=(cur+1)%TEMP.length;render();});
+$('cWx').addEventListener('dblclick',e=>{state.manualWx=null;render();});
+$('cTemp').addEventListener('dblclick',e=>{state.manualT=null;render();});
+
+/* ===== Laden ===== */
+const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Vienna'});
+let loadedFor=null;
+async function load(){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
+    `&hourly=weather_code,cloud_cover&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FVienna&forecast_days=2`;
+  try{
+    const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status);
+    const d=await r.json(); const day=today();
+    const di=d.daily.time.indexOf(day);
+    state.wx=dayWeather(d.hourly,day);
+    state.tmax=d.daily.temperature_2m_max[di<0?0:di];
+    if(loadedFor && loadedFor!==day){state.manualWx=null;state.manualT=null;} // neuer Tag → Handwahl zurücksetzen
+    loadedFor=day;
+    $('info').textContent=`${ORT} · ${new Date().toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'})} · Open-Meteo`;
+    try{localStorage.setItem('wetterCache',JSON.stringify({day,wx:state.wx,tmax:state.tmax}));}catch(e){}
+  }catch(e){
+    try{const c=JSON.parse(localStorage.getItem('wetterCache')||'null');
+      if(c&&c.day===today()){state.wx=c.wx;state.tmax=c.tmax;}}catch(_){}
+    $('info').textContent='offline – letzter Stand';
+  }
+  if(!state.wx){state.wx='sonnig';}
+  render();
+}
+load();
+setInterval(load,30*60*1000); // alle 30 Minuten aktualisieren
+</script>
+</body>
+</html>
