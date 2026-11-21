@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sachunterricht 4. Klasse – Lernen &amp; Test</title>
+<style>
+:root{--bg:#f4f7fb;--ink:#1d2733;--mut:#5b6b7d;--card:#fff;--line:#d9e2ec;--ok:#2e9e5b;--okbg:#e3f6ea;--bad:#d64545;--badbg:#fde8e8;--pri:#2563eb}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:20px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Verdana,sans-serif;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0;flex:1}
+header .prog{font-size:16px;color:var(--mut)}
+button{font:inherit;cursor:pointer;border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:14px;padding:12px 18px;min-height:56px;touch-action:manipulation}
+button:active{transform:scale(.98)}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+button.small{min-height:44px;padding:8px 14px;font-size:17px}
+button:disabled{opacity:.55;cursor:default}
+main{max-width:900px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.big{display:flex;flex-direction:column;gap:6px;text-align:left;padding:20px;border-radius:18px;background:var(--card);border:2px solid var(--line);min-height:120px}
+.big b{font-size:24px}.big span{font-size:17px;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.chip{border-radius:999px;padding:8px 16px;min-height:48px;border-width:3px}
+.sub{color:var(--mut);font-size:17px}
+.qcard{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px;margin-top:12px}
+.qcard h2{font-size:24px;margin:0 0 14px}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;width:100%}
+.opt.sel{border-color:var(--pri);background:#eaf1ff}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.fb{margin-top:14px;padding:14px;border-radius:14px;font-size:19px}
+.fb.ok{background:var(--okbg)}.fb.bad{background:var(--badbg)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--pri);width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+input[type=text]{font:inherit;width:100%;padding:14px;border:2px solid var(--line);border-radius:14px;min-height:56px}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.match button{font-size:18px;text-align:left}
+.match .ok{border-color:var(--ok);background:var(--okbg)}
+.match .sel{border-color:var(--pri);background:#eaf1ff}
+.match .bad{border-color:var(--bad);background:var(--badbg)}
+.flash{background:var(--card);border:3px solid var(--pri);border-radius:22px;min-height:230px;padding:26px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:26px;cursor:pointer;user-select:none}
+.flash.back{background:#eaf1ff}
+.tag{display:inline-block;font-size:14px;font-weight:700;color:#fff;border-radius:999px;padding:2px 10px;margin-bottom:8px}
+.sheet section{background:var(--card);border:2px solid var(--line);border-left-width:10px;border-radius:14px;padding:6px 18px 12px;margin:16px 0;break-inside:avoid}
+.sheet h2{font-size:25px;margin:12px 0 4px}
+.sheet h3{font-size:19px;margin:12px 0 2px;color:var(--mut)}
+.sheet ul{margin:4px 0 0;padding-left:22px}.sheet li{margin:3px 0;font-size:19px}
+.stars{font-size:54px;text-align:center;letter-spacing:6px}
+.rev{border-left:6px solid var(--bad);background:var(--card);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:18px}
+@media(max-width:640px){body{font-size:18px}.match{grid-template-columns:1fr}}
+@media print{header,.noprint{display:none!important}body{background:#fff;font-size:13px}.sheet li{font-size:13px}.sheet h2{font-size:17px}.sheet section{border-width:1px 1px 1px 6px;margin:8px 0;padding:2px 12px 8px}main{max-width:none;padding:0}}
+</style>
+</head>
+<body>
+<header class="noprint"><button class="small" id="home" aria-label="Startseite">🏠</button><h1 id="title">Sachunterricht 4. Klasse</h1><span class="prog" id="prog"></span></header>
+<main id="app"></main>
+
+<script>
+/* ============================================================
+   DATEN – hier können Inhalte ergänzt/geändert werden.
+   Fragetypen (t = Themen-Kürzel):
+   mc(t, Frage, richtig, [falsch1,falsch2,falsch3], Erklärung)
+   tf(t, Aussage, true|false, Erklärung)
+   tx(t, Frage, [akzeptierte Antworten], Erklärung)   → Eingabe mit Tippfehler-Toleranz
+   mt(t, Aufgabe, [[links,rechts],...], "Karteikarten-Vorlage mit {l}")
+   ============================================================ */
+const TOPICS=[
+{id:"land",title:"Österreich & Nachbarländer",icon:"🇦🇹",color:"#d64545",sections:[
+ {h:"Lage",items:["Österreich liegt in der <b>Mitte Europas</b>. Es ist ein <b>Binnenland</b> – es grenzt an <b>kein Meer</b>.","Österreich hat <b>9 Bundesländer</b>. Niederösterreich ist das größte.","<b>Wien</b> ist die Hauptstadt von ganz Österreich (Bundeshauptstadt) und zugleich ein Bundesland."]},
+ {h:"9 Bundesländer – 9 Hauptstädte",items:["Wien – Wien","Niederösterreich – <b>St. Pölten</b>","Oberösterreich – <b>Linz</b>","Salzburg – Salzburg","Tirol – <b>Innsbruck</b>","Vorarlberg – <b>Bregenz</b>","Kärnten – <b>Klagenfurt</b>","Steiermark – <b>Graz</b>","Burgenland – <b>Eisenstadt</b>"]},
+ {h:"8 Nachbarländer",items:["<b>Deutschland, Tschechien, Slowakei, Ungarn, Slowenien, Italien, Schweiz, Liechtenstein</b>","Aufgepasst: <b>Slowakei</b> (im Nordosten) und <b>Slowenien</b> (im Süden) sind verschiedene Länder!"]}]},
+{id:"noe",title:"Niederösterreich: Wappen, Viertel, Berge",icon:"🏔️",color:"#2563eb",sections:[
+ {h:"Das Wappen",items:["Fünf <b>goldene Adler</b> auf <b>blauem Grund</b> (Adlerflügel). Über dem Wappen: eine <b>Herzogskrone</b>.","Es erinnert an die lange Geschichte: NÖ war früher Teil des <b>Herzogtums Österreich</b>. Ein Herzog war ein Herrscher.","Die fünf Adler stammen aus dem Wappen der <b>Grafen von Habsburg-Laufenburg</b>.","Farben und Zeichen halfen, die Herrscherfamilie zu erkennen – auch heute ist das Wappen ein wichtiges Zeichen für NÖ."]},
+ {h:"Die Viertel",items:["<b>Waldviertel</b> – nördlich der Donau. Flache, bewaldete Hügel, keine hohen spitzen Gipfel. <b>Rumpfgebirge</b> (Granit- und Gneishochland), ein sehr altes Gebirge.","<b>Mostviertel</b> – hier steht der <b>Ötscher</b>, ein markanter Berg und beliebtes Wandergebiet. Die Menschen nennen ihn liebevoll <b>„Vaterberg“</b>.","<b>Industrieviertel</b> – im Süden, mit den hohen Bergen der <b>Alpen</b>: <b>Schneeberg</b> und <b>Rax</b>.","<b>Weinviertel</b> – das vierte Viertel (nicht im Heft, aber gut zu wissen)."]},
+ {h:"Berge",items:["Der <b>Schneeberg</b> ist mit <b>2 076 m</b> der allerhöchste Berg Niederösterreichs. Gleich daneben liegt die <b>Rax</b>.","Die hohen Berge im Süden gehören zu den <b>Alpen</b>.","Das Waldviertel hat <b>niedrigere</b> Berge als das Industrieviertel."]}]},
+{id:"reg",title:"Landesregierung, Landtag & Klangturm",icon:"🏛️",color:"#7c3aed",sections:[
+ {h:"Wer regiert Niederösterreich?",items:["NÖ wird von der <b>Landesregierung</b> in <b>St. Pölten</b> regiert und verwaltet. Das Gebäude heißt <b>Landhaus</b> (Landtag).","Oberhaupt des Landes: die <b>Landeshauptfrau</b> / der Landeshauptmann.","Aktuell: Landeshauptfrau <b>Johanna Mikl-Leitner</b>. Stellvertreter: <b>Dr. Stephan Pernkopf</b> und <b>Udo Landbauer, MA</b>.","Alle NiederösterreicherInnen ab <b>16 Jahren</b> wählen alle <b>5 Jahre</b> Parteien. Die Parteien schicken <b>Abgeordnete</b> in den <b>Landtag</b>.","Der Landtag ist so etwas wie das <b>„Parlament“</b> von NÖ: Dort sprechen die PolitikerInnen über Schulen, Straßen, Umweltschutz oder neue <b>Gesetze</b>.","Die Mitglieder der Landesregierung treffen wichtige <b>Entscheidungen</b>. An Gesetze müssen sich alle Menschen halten."]},
+ {h:"Landhaus & Regierungsviertel",items:["Das <b>Landhausviertel</b> (= <b>Regierungsviertel</b>) wurde <b>1997</b> fertig gebaut.","Das Landhaus sieht <b>modern</b> aus und wie ein <b>großes Schiff</b> („Landhausschiff“).","Schulklassen können Führungen machen und im <b>Sitzungssaal</b> einen Blick in den Landtag werfen."]},
+ {h:"Der Klangturm",items:["Das markante <b>Wahrzeichen</b> des Regierungsviertels von St. Pölten.","<b>77 Meter</b> hoch, <b>280 Stufen</b> im Inneren (es gibt auch einen Lift).","Gebaut 1996–1997 vom Architekten <b>Ernst Hoffmann</b>, aus <b>Stahl und Glas</b>.","Ursprünglich als <b>Klangkunstmuseum</b> gedacht. In den <b>drei Kugeln</b> gibt es Klanginstallationen – sie läuten nur noch bei besonderen Anlässen."]}]},
+{id:"stp",title:"St. Pölten",icon:"⛪",color:"#0d9488",sections:[
+ {h:"Landeshauptstadt",items:["St. Pölten ist seit <b>1986</b> die <b>Landeshauptstadt</b> von Niederösterreich. Davor war Wien auch das politische Zentrum von NÖ – das Land sollte eine eigene Hauptstadt bekommen.","Die <b>älteste dokumentierte Stadt Österreichs</b>; fast <b>60 000 Einwohner</b> (2025). Römerzeit: <b>Aelium Cetium</b>.","Hier sitzen die Landesregierung und der Landtag (Regierungsviertel)."]},
+ {h:"Kloster St. Hippolyt & Dom",items:["Das <b>Benediktinerkloster St. Hippolyt</b> wurde schon im <b>8. Jahrhundert</b> gegründet. Im Mittelalter hieß St. Pölten „Sanctus Ypolit(us)“ → daraus entstand der Name.","Die Mönche lebten, beteten und arbeiteten dort, kümmerten sich um Kranke, unterrichteten junge Menschen und schrieben Bücher.","Später wurde das Kloster in ein <b>Stift</b> umgewandelt. Heute steht dort der <b>Dom von St. Pölten</b> (früher die Klosterkirche). Der <b>Domplatz</b> war früher ein <b>Friedhof</b>.","Alte Teile sieht man noch: <b>Kreuzgang</b> und <b>Krypta</b> (unterirdisch). Die Statue des hl. Hippolyt hält ein <b>Kreuz</b>."]},
+ {h:"Rathaus & Dreifaltigkeitssäule (Rathausplatz)",items:["Das <b>Rathaus</b>: großes, barockes Gebäude; Teile stammen aus dem <b>16. Jahrhundert</b> (früher war es ein Kloster). Großer Turm mit <b>Glockenspiel</b>, alte Fenster.","Im Rathaus arbeiten der <b>Bürgermeister</b> und viele Angestellte, die sich um die Stadt kümmern (Stadtverwaltung).","Die <b>Dreifaltigkeitssäule</b>: Kunstwerk aus <b>weißem Marmor</b>, über 250 Jahre alt (<b>18. Jahrhundert</b>).","Gebaut aus <b>Dank</b> und als <b>Versprechen (Gelöbnis)</b>: Die Stadt blieb von Krankheiten und Feuer verschont.","Unten: ein <b>Brunnen</b> mit Wasser und vier Heilige (<b>Leopold, Hippolyt, Sebastian, Florian</b>). Oben: die <b>Heilige Dreifaltigkeit</b> (Gott Vater, Jesus, Heiliger Geist), Engel und Wolken.","Einzige Säule in NÖ, die <b>Brunnen und Dreifaltigkeit</b> in einem Bauwerk vereint."]},
+ {h:"Weitere Sehenswürdigkeiten",items:["<b>Zwiebelmusterhaus</b> („Tellerhaus“): Rundherum viele Teller mit blauem Muster; Statue des hl. Hippolyt an der Ecke Kremser Gasse. (Arbeitsblatt: <b>168 Teller</b> – bitte mit dem Heft vergleichen.)","<b>Apotheke „Zum goldenen Löwen“</b>: Ecke Wiener Straße/Kremser Gasse, die <b>älteste Apotheke</b> der Stadt – seit <b>1595</b>.","<b>Mary Ward Schulen</b> (Linzer Straße): ursprünglich Kloster und Schule für adelige Mädchen; Barockfassade von <b>Jakob Prandtauer</b>.","<b>Festspielhaus</b>: moderner Konzertsaal mit 1 100 Sitzplätzen; Architekt <b>Klaus Kada</b>.","<b>Landestheater</b>: klassische Fassade mit großen Fenstern; Theater, Konzerte und weitere Veranstaltungen.","<b>Jugendstilhaus</b> von <b>Josef Olbrich</b> (nahe beim Regierungsviertel, Wiener Straße)."]},
+ {h:"Die Traisen",items:["Der <b>Fluss Traisen</b> fließt durch St. Pölten.","Wichtig für <b>Natur</b> (Lebensraum für Fische, Vögel, Tiere), <b>Freizeit</b> (spazieren, Rad fahren), <b>Wasser</b> (Wasserhaushalt), <b>Grünraum</b> und <b>Stadtbild</b>.","<b>Hochwasserschutz</b>: Maßnahmen an der Traisen schützen die Stadt vor Hochwasser."]}]},
+{id:"muell",title:"Mülltrennung",icon:"♻️",color:"#2e9e5b",sections:[
+ {h:"Warum trennen wir Müll?",items:["Viele Materialien können <b>wiederverwendet oder recycelt</b> werden.","Wir sparen <b>Rohstoffe und Energie</b> und schützen die <b>Umwelt</b>.","Weniger Müll gelangt in die Natur, in Flüsse und Meere. <b>Gefährliche Abfälle</b> werden richtig entsorgt.","<b>Merke:</b> Je besser wir trennen, desto mehr kann wiederverwertet werden."]},
+ {h:"Die wichtigsten Müllarten",items:["<b>Papier</b>: Zeitung, Heft, Karton, Bücher → daraus wird <b>neues Papier</b>. Möglichst <b>sauber und trocken</b> sammeln.","<b>Glas</b>: Glasflasche, Marmeladenglas.","<b>Bioabfall</b>: Obst- und Gemüsereste, Eierschalen, Kaffeesatz, Pflanzenreste → daraus kann <b>Kompost</b> (oder Energie) werden.","<b>Verpackungen</b>: Kunststoff (Plastikflaschen, Joghurtbecher) und <b>Metall</b> (Aludosen, Konservendosen) → daraus entstehen neue Produkte.","<b>Restmüll</b>: Abfälle, die nicht anders gesammelt werden (z. B. benutztes Taschentuch).","<b>Problemstoffe</b>: Batterien, Farben und andere gefährliche Stoffe – <b>nie</b> in den Restmüll!","Nicht alle Gemeinden haben genau dieselben Sammelregeln."]},
+ {h:"Müll vermeiden ist noch besser",items:["Jausenbox mit vielen einzeln verpackten Snacks → <b>wiederbefüllbare Jausenbox</b> verwenden.","T-Shirt mit kleinem Loch → <b>flicken</b> (oder als Putzlappen/Spielkleidung weiterverwenden).","Flasche Wasser für die Schule → <b>Trinkflasche wieder befüllen</b>.","Kaputtes Spielzeug → <b>reparieren</b>, brauchbare Teile weiterverwenden."]}]},
+{id:"nat",title:"26. Oktober – Nationalfeiertag",icon:"🎉",color:"#d97706",sections:[
+ {h:"Zeitstrahl",items:["<b>1939–1945: 2. Weltkrieg</b> – sechs Jahre Krieg. Millionen Menschen wurden getötet oder verletzt, Häuser, Fabriken, Kirchen, Brücken, Wälder und Felder wurden zerstört.","<b>1945–1955: Wiederaufbau.</b> Amerikaner, Russen, Briten und Franzosen (die Besatzungsmächte) befreiten unser Land. Die Soldaten blieben und halfen beim Wiederaufbau. Österreich wollte einen freien, unabhängigen Staat.","<b>15. Mai 1955:</b> Unterzeichnung des <b>Staatsvertrages</b> im <b>Schloss Belvedere</b> in Wien. Außenminister <b>Leopold Figl</b> rief den jubelnden ÖsterreicherInnen zu: „Österreich ist frei!“","<b>25. Oktober 1955:</b> Die letzten Soldaten der Besatzungsmächte verließen Österreich.","<b>26. Oktober 1955:</b> Österreich beschließt das Gesetz über die <b>Neutralität</b>. Seitdem ist der 26. Oktober unser <b>Nationalfeiertag</b>."]},
+ {h:"Neutralität",items:["Österreich nimmt an <b>keinem Krieg</b> teil und unterstützt im Kriegsfall <b>kein anderes Land</b>."]}]}
+];
+
+function mc(t,q,c,w,e){return{k:"mc",t,q,c,w,e}}
+function tf(t,q,a,e){return{k:"tf",t,q,a,e}}
+function tx(t,q,acc,e){return{k:"tx",t,q,acc,e}}
+function mt(t,q,p,card){return{k:"mt",t,q,p,card}}
+
+const Q=[
+/* ---- Österreich ---- */
+mc("land","Wie viele Bundesländer hat Österreich?","9",["7","8","10"]),
+mc("land","Welche Stadt ist die Hauptstadt von ganz Österreich?","Wien",["St. Pölten","Linz","Salzburg"]),
+mc("land","Österreich liegt in der Mitte Europas und ist ein …","Binnenland (kein Meer)",["Inselstaat","Küstenland","Land am Meer"]),
+mc("land","Welches Land ist KEIN Nachbarland von Österreich?","Frankreich",["Ungarn","Slowenien","Schweiz"]),
+mc("land","Wie viele Nachbarländer hat Österreich?","8",["6","7","9"],"Deutschland, Tschechien, Slowakei, Ungarn, Slowenien, Italien, Schweiz und Liechtenstein."),
+mc("land","Wie heißt die Hauptstadt von Oberösterreich?","Linz",["Salzburg","Graz","Innsbruck"]),
+mc("land","Wie heißt die Hauptstadt von Vorarlberg?","Bregenz",["Innsbruck","Feldkirch","Linz"]),
+mc("land","Wie heißt die Hauptstadt von Kärnten?","Klagenfurt",["Villach","Graz","Eisenstadt"]),
+mc("land","Wie heißt die Hauptstadt der Steiermark?","Graz",["Linz","Klagenfurt","Salzburg"]),
+mc("land","Wie heißt die Hauptstadt des Burgenlandes?","Eisenstadt",["Graz","Wien","St. Pölten"]),
+mc("land","Wie heißt die Hauptstadt von Tirol?","Innsbruck",["Salzburg","Bregenz","Klagenfurt"]),
+tf("land","Slowakei und Slowenien sind dasselbe Land.",false,"Die Slowakei liegt im Nordosten, Slowenien im Süden von Österreich."),
+tf("land","Wien ist die Hauptstadt von Österreich und zugleich ein Bundesland.",true),
+tx("land","Wie heißt die Hauptstadt von Niederösterreich?",["St. Pölten","Sankt Pölten"]),
+tx("land","Wie heißt das kleine Nachbarland neben Vorarlberg und der Schweiz? (Es beginnt mit L.)",["Liechtenstein"]),
+mt("land","Verbinde jedes Bundesland mit seiner Hauptstadt.",[["Niederösterreich","St. Pölten"],["Oberösterreich","Linz"],["Tirol","Innsbruck"],["Salzburg","Salzburg"],["Wien","Wien"]],"Hauptstadt von {l}?"),
+mt("land","Verbinde jedes Bundesland mit seiner Hauptstadt.",[["Vorarlberg","Bregenz"],["Kärnten","Klagenfurt"],["Steiermark","Graz"],["Burgenland","Eisenstadt"]],"Hauptstadt von {l}?"),
+/* ---- NÖ ---- */
+mc("noe","Wie viele goldene Adler zeigt das Wappen von Niederösterreich?","Fünf",["Drei","Vier","Sieben"]),
+mc("noe","Auf welcher Farbe sind die goldenen Adler im NÖ-Wappen?","Blau",["Rot","Grün","Weiß"]),
+mc("noe","Was befindet sich über dem Wappen von Niederösterreich?","Eine Herzogskrone",["Eine Königskrone","Ein Hut","Ein Schwert"]),
+mc("noe","Von wem stammen die Adler im Wappen ursprünglich?","Von den Grafen von Habsburg-Laufenburg",["Von den Römern","Von der Stadt Wien","Von einem Kloster"]),
+mc("noe","Wessen Teil war Niederösterreich früher?","Des Herzogtums Österreich",["Des Königreichs Ungarn","Des Deutschen Kaiserreichs","Des Fürstentums Liechtenstein"]),
+mc("noe","Welches ist KEIN Viertel von Niederösterreich?","Mühlviertel",["Waldviertel","Mostviertel","Industrieviertel"],"Das Mühlviertel gehört zu Oberösterreich."),
+mc("noe","Welcher Berg ist der allerhöchste in Niederösterreich?","Schneeberg",["Ötscher","Rax","Großglockner"]),
+mc("noe","Wie hoch ist der Schneeberg?","2 076 Meter",["1 076 Meter","2 760 Meter","3 076 Meter"]),
+mc("noe","Welcher Berg im Mostviertel wird liebevoll „Vaterberg“ genannt?","Ötscher",["Rax","Schneeberg","Hochkar"]),
+mc("noe","Welcher Berg liegt gleich neben dem Schneeberg?","Rax",["Ötscher","Traisen","Donau"]),
+mc("noe","Wie heißt das sehr alte Gebirge nördlich der Donau im Waldviertel?","Rumpfgebirge",["Alpen","Tauern","Karawanken"]),
+mc("noe","Woraus besteht das Hochland im Waldviertel?","Aus Granit und Gneis",["Aus Kalk und Sand","Aus Eis und Schnee","Aus Lehm"]),
+tf("noe","Der Schneeberg ist der höchste Berg in Niederösterreich.",true),
+tf("noe","Die Rax liegt im Waldviertel.",false,"Die Rax liegt im Industrieviertel (im Süden)."),
+tf("noe","Die Berge im Süden von Niederösterreich gehören zu den Alpen.",true),
+tf("noe","Das Waldviertel hat höhere Berge als das Industrieviertel.",false,"Im Waldviertel gibt es flachere, bewaldete Hügel."),
+mt("noe","Verbinde das Viertel mit dem Merkmal.",[["Waldviertel","Rumpfgebirge, Granit und Gneis"],["Mostviertel","Ötscher („Vaterberg“)"],["Industrieviertel","Schneeberg und Rax (Alpen)"]],"{l} – was gehört dazu?"),
+/* ---- Landesregierung ---- */
+mc("reg","Wer regiert und verwaltet Niederösterreich von St. Pölten aus?","Die Landesregierung",["Der Bürgermeister von Wien","Die Bundesregierung","Der Domprobst"]),
+mc("reg","Wie heißt unsere Landeshauptfrau?","Johanna Mikl-Leitner",["Maria Theresia","Kaiserin Sisi","Anna Bauer"]),
+mc("reg","Wie heißen die Stellvertreter der Landeshauptfrau?","Dr. Stephan Pernkopf und Udo Landbauer",["Dr. Stephan Pernkopf und Sven Hergovich","Ludwig Schleritzko und Udo Landbauer","Christoph Luisser und Susanne Rosenkranz"]),
+mc("reg","Ab welchem Alter darf man in Niederösterreich den Landtag wählen?","Ab 16 Jahren",["Ab 12 Jahren","Ab 14 Jahren","Ab 18 Jahren"]),
+mc("reg","Alle wie viele Jahre wird der Landtag gewählt?","Alle 5 Jahre",["Jedes Jahr","Alle 2 Jahre","Alle 10 Jahre"]),
+mc("reg","Der Landtag ist so etwas wie das … von Niederösterreich.","Parlament",["Rathaus","Gericht","Kloster"]),
+mc("reg","Was machen die Abgeordneten im Landtag?","Sie sprechen über wichtige Themen und neue Gesetze",["Sie bauen Straßen","Sie unterrichten Schulklassen","Sie fahren die Müllabfuhr"]),
+mc("reg","Wie heißt das Viertel in St. Pölten, in dem Landhaus und Klangturm stehen?","Regierungsviertel (Landhausviertel)",["Altstadt","Industrieviertel","Domviertel"]),
+mc("reg","Wie sieht das Landhaus aus?","Modern – wie ein großes Schiff",["Wie eine Burg","Wie ein Zelt","Wie ein Barockschloss"]),
+mc("reg","In welchem Jahr wurde das Landhausviertel fertig gebaut?","1997",["1955","1986","2005"]),
+mc("reg","Wie hoch ist der Klangturm?","77 Meter",["57 Meter","100 Meter","280 Meter"]),
+mc("reg","Wie viele Stufen hat der Klangturm im Inneren?","280",["77","180","380"]),
+mc("reg","Woraus ist der Klangturm gebaut?","Aus Stahl und Glas",["Aus Holz","Aus Ziegeln","Aus Marmor"]),
+mc("reg","Wofür war der Klangturm ursprünglich gedacht?","Als Klangkunstmuseum",["Als Gefängnis","Als Wetterstation","Als Feuerwache"]),
+mc("reg","Wann läuten die drei Kugeln im Klangturm heute?","Nur noch bei besonderen Anlässen",["Jede Stunde","Jeden Morgen","Nie"]),
+tf("reg","Das Landhaus steht in Wien.",false,"Es steht in St. Pölten."),
+tf("reg","Schulklassen können im Landhaus einen Blick in den Sitzungssaal werfen.",true),
+tx("reg","Wie heißt unsere Landeshauptfrau mit Nachnamen?",["Mikl-Leitner","Mikl Leitner","Miklleitner"]),
+tx("reg","Wie viele Meter ist der Klangturm hoch? (nur die Zahl)",["77"]),
+tx("reg","Wie viele Stufen führen im Klangturm nach oben? (nur die Zahl)",["280"]),
+/* ---- St. Pölten ---- */
+mc("stp","Seit wann ist St. Pölten die Landeshauptstadt von Niederösterreich?","Seit 1986",["Seit 1955","Seit 1997","Seit 1945"]),
+mc("stp","Wie viele Menschen wohnen ungefähr in St. Pölten?","Fast 60 000",["Etwa 6 000","Etwa 600 000","Über 1,8 Millionen"]),
+mc("stp","Warum wurde St. Pölten zur Landeshauptstadt?","Weil Niederösterreich eine eigene Hauptstadt bekommen sollte",["Weil dort der Kaiser wohnte","Weil dort die höchsten Berge sind","Weil Wien zu klein war"]),
+mc("stp","Wer war vor 1986 auch das politische Zentrum von Niederösterreich?","Wien",["Linz","Krems","Graz"]),
+mc("stp","Welcher Fluss fließt durch St. Pölten?","Die Traisen",["Die Donau","Die Enns","Die Mur"]),
+mc("stp","Wer arbeitet heute im Rathaus?","Der Bürgermeister und viele Angestellte",["Die Landeshauptfrau","Die Mönche","Die Abgeordneten des Landtags"]),
+mc("stp","Wie heißt die große barocke Kirche im Zentrum von St. Pölten?","Der St. Pöltner Dom",["Der Stephansdom","Das Stift Melk","Das Rathaus"]),
+mc("stp","Wie hieß St. Pölten zur Römerzeit?","Aelium Cetium",["Carnuntum","Vindobona","Iuvavum"]),
+mc("stp","Welches Kloster stand an der Stelle des Doms?","Das Benediktinerkloster St. Hippolyt",["Das Kloster Melk","Das Stift Heiligenkreuz","Das Kloster Neuburg"]),
+mc("stp","Von welchem Namen stammt der Name „St. Pölten“?","Von „Sanctus Hippolytus“ (hl. Hippolyt)",["Von „Sankt Peter“","Von „Sankt Paul“","Von „Sankt Pelagius“"]),
+mc("stp","In welchem Jahrhundert wurde das Kloster St. Hippolyt gegründet?","Im 8. Jahrhundert",["Im 5. Jahrhundert","Im 12. Jahrhundert","Im 18. Jahrhundert"]),
+mc("stp","Was taten die Mönche im Kloster?","Sie pflegten Kranke, unterrichteten und schrieben Bücher",["Sie bauten Autos","Sie fuhren Rad","Sie regierten das Land"]),
+mc("stp","Welche alten Teile des Klosters kann man noch sehen?","Kreuzgang und Krypta",["Klangturm und Landhaus","Festspielhaus und Theater","Glockenspiel und Brunnen"]),
+mc("stp","Was war der Domplatz früher?","Ein Friedhof",["Ein Marktplatz","Ein Bahnhof","Ein Fußballplatz"]),
+mc("stp","Woraus ist die Dreifaltigkeitssäule gebaut?","Aus weißem Marmor",["Aus Holz","Aus Eisen","Aus roten Ziegeln"]),
+mc("stp","Aus welchem Jahrhundert stammt die Dreifaltigkeitssäule?","Aus dem 18. Jahrhundert (über 250 Jahre alt)",["Aus dem 8. Jahrhundert","Aus dem 16. Jahrhundert","Aus dem 20. Jahrhundert"]),
+mc("stp","Warum wurde die Dreifaltigkeitssäule gebaut?","Aus Dank, weil die Stadt von Krankheiten und Feuer verschont blieb",["Weil der Kaiser zu Besuch kam","Weil eine Burg gebaut wurde","Weil die Traisen über die Ufer trat"]),
+mc("stp","Was sieht man ganz oben auf der Dreifaltigkeitssäule?","Die Heilige Dreifaltigkeit (Gott Vater, Jesus, Heiliger Geist)",["Vier Heilige","Einen Brunnen","Das Landeswappen"]),
+mc("stp","Welche vier Heiligen stehen rund um die Dreifaltigkeitssäule?","Leopold, Hippolyt, Sebastian und Florian",["Peter, Paul, Maria und Josef","Leopold, Martin, Nikolaus und Barbara","Georg, Florian, Anna und Antonius"]),
+mc("stp","Was macht die Dreifaltigkeitssäule in St. Pölten besonders?","Sie vereint Brunnen und Dreifaltigkeit in einem Bauwerk",["Sie ist die höchste Säule der Welt","Sie ist aus Gold","Sie steht in einem Kloster"]),
+mc("stp","Was hängt im Turm des Rathauses?","Ein Glockenspiel",["Eine Kanone","Ein Wetterhahn aus Gold","Ein Aufzug"]),
+mc("stp","Wer hat das Festspielhaus St. Pölten gebaut (Architekt)?","Klaus Kada",["Jakob Prandtauer","Josef Olbrich","Ernst Hoffmann"]),
+mc("stp","Wie viele Sitzplätze hat der Konzertsaal im Festspielhaus?","1 100",["110","550","11 000"]),
+mc("stp","Seit wann gibt es die Apotheke „Zum goldenen Löwen“?","Seit 1595",["Seit 1986","Seit 1895","Seit 1055"]),
+mc("stp","Wofür wurde das Gebäude der Mary Ward Schulen ursprünglich erbaut?","Als Kloster und Schule für adelige Mädchen",["Als Bahnhof","Als Rathaus","Als Theater"]),
+mc("stp","Warum heißt das Zwiebelmusterhaus auch „Tellerhaus“?","Rundherum sieht man viele Teller mit blauem Muster",["Dort wird Geschirr verkauft","Es ist rund wie ein Teller","Dort wurde Suppe gekocht"]),
+mc("stp","Was ist an der Traisen für St. Pölten wichtig?","Natur, Freizeit, Wasser und Hochwasserschutz",["Nur Schiffsverkehr","Der Weinbau","Sie ist der höchste Berg"]),
+tf("stp","Entlang der Traisen kann man spazieren und Rad fahren.",true),
+tf("stp","Die Traisen hat nichts mit Hochwasserschutz zu tun.",false,"Maßnahmen an der Traisen helfen, die Stadt vor Hochwasser zu schützen."),
+tf("stp","St. Pölten ist die älteste dokumentierte Stadt Österreichs.",true),
+tx("stp","Was hält die Statue des hl. Hippolyt in der Hand?",["Kreuz","Ein Kreuz"]),
+tx("stp","Wie heißt der Fluss, der durch St. Pölten fließt?",["Traisen","Die Traisen"]),
+tx("stp","Wie viele Teller schmücken das Tellerhaus (Zwiebelmusterhaus)? (nur die Zahl)",["168"],"Laut Arbeitsblatt/Heft: 168 Teller."),
+mt("stp","Verbinde die Sehenswürdigkeit mit dem passenden Merkmal.",[["Zwiebelmusterhaus","Teller mit blauem Muster"],["Apotheke „Zum goldenen Löwen“","Älteste Apotheke der Stadt (seit 1595)"],["Mary Ward Schulen","Kloster und Schule für adelige Mädchen"],["Festspielhaus","Konzertsaal mit 1 100 Sitzplätzen"],["Klangturm","77 m hoch, drei Kugeln"]],"{l} – was ist das Besondere?"),
+mt("stp","Verbinde das Gebäude mit dem Architekten.",[["Mary Ward Schulen","Jakob Prandtauer"],["Festspielhaus","Klaus Kada"],["Jugendstilhaus","Josef Olbrich"],["Klangturm","Ernst Hoffmann"]],"Wer war der Architekt von {l}?"),
+/* ---- Müll ---- */
+mc("muell","Was bedeutet Mülltrennung?","Verschiedene Abfälle werden sortiert und nicht alle in dieselbe Tonne geworfen",["Müll wird verbrannt","Müll wird vergraben","Müll wird verkauft"]),
+mc("muell","Warum trennen wir Müll?","Wir sparen Rohstoffe und Energie und schützen die Umwelt",["Weil es Spaß macht","Weil Müll schön aussieht","Damit mehr Müll entsteht"]),
+mc("muell","Wohin gehören Batterien und Farben?","Zu den Problemstoffen",["In den Restmüll","In den Biomüll","In die Papiertonne"]),
+mc("muell","Wohin gehören Eierschalen und Kaffeesatz?","In den Bioabfall",["In den Restmüll","In die Glassammlung","Zum Papier"]),
+mc("muell","Wohin gehört ein leerer Joghurtbecher?","Zu den (Plastik-)Verpackungen",["In den Biomüll","Zum Altglas","Zu den Problemstoffen"]),
+mc("muell","Wohin gehört eine leere Getränkedose aus Alu?","Zu den (Metall-)Verpackungen",["Zum Papier","In den Biomüll","In die Glassammlung"],"Die genauen Regeln können je nach Gemeinde etwas anders sein."),
+mc("muell","Wohin gehört ein Marmeladenglas?","Zum Altglas",["Zum Papier","In den Biomüll","In den Restmüll"]),
+mc("muell","Was kommt in den Restmüll?","Abfälle, die nicht anders gesammelt werden (z. B. ein benutztes Taschentuch)",["Batterien","Obst- und Gemüsereste","Glasflaschen"]),
+mc("muell","Was kann aus Bioabfall entstehen?","Kompost",["Glas","Plastikflaschen","Batterien"]),
+mc("muell","Was wird aus getrennt gesammeltem Altpapier hergestellt?","Neues Papier",["Neues Glas","Plastik","Kompost"]),
+tf("muell","Papier sollte möglichst sauber und trocken gesammelt werden.",true),
+tf("muell","Batterien dürfen einfach in den Restmüll geworfen werden.",false,"Batterien sind Problemstoffe und müssen extra gesammelt werden."),
+tf("muell","Müllvermeidung ist noch besser, als Müll erst zu trennen.",true),
+tf("muell","Aus alten Materialien können neue Produkte entstehen.",true),
+tf("muell","Alle Gemeinden haben immer genau dieselben Sammelregeln.",false),
+tx("muell","Batterien gehören zu den … (ein Wort)",["Problemstoffe","Problemstoffen","Problemstoff"]),
+tx("muell","Aus Altpapier wird neues … (ein Wort)",["Papier"]),
+mt("muell","Ordne richtig zu: Wohin gehört der Gegenstand?",[["Bananenschale","Bioabfall"],["Zeitung","Papier"],["Glasflasche","Glas"],["Benutztes Taschentuch","Restmüll"],["Leere Kunststoffverpackung","Verpackung"],["Batterie","Problemstoff"]],"Wohin gehört: {l}?"),
+mt("muell","Müll vermeiden: Was würdest du tun?",[["Viele einzeln verpackte Snacks in der Jausenbox","Wiederbefüllbare Jausenbox verwenden"],["T-Shirt mit kleinem Loch","Flicken"],["Flasche Wasser für die Schule","Trinkflasche wieder befüllen"],["Kaputtes Spielzeug mit brauchbarem Teil","Reparieren"]],"Müll vermeiden bei: {l}?"),
+/* ---- Nationalfeiertag ---- */
+mc("nat","Wie lange dauerte der 2. Weltkrieg?","Sechs Jahre (1939–1945)",["Zwei Jahre","Zehn Jahre","Ein Jahr"]),
+mc("nat","Welche Besatzungsmächte befreiten Österreich?","Amerikaner, Russen, Briten und Franzosen",["Spanier, Russen, Briten und Italiener","Nur Amerikaner","Deutsche und Ungarn"]),
+mc("nat","Was geschah am 15. Mai 1955?","Der Staatsvertrag wurde unterzeichnet",["Die Neutralität wurde beschlossen","Der Krieg begann","Die letzten Soldaten gingen"]),
+mc("nat","Wo wurde der Staatsvertrag unterzeichnet?","Im Schloss Belvedere in Wien",["Im Schloss Schönbrunn","In der Hofburg","Im Rathaus St. Pölten"]),
+mc("nat","Welcher Außenminister rief „Österreich ist frei“?","Leopold Figl",["Bruno Kreisky","Kaiser Franz Joseph","Maria Theresia"]),
+mc("nat","Was geschah am 25. Oktober 1955?","Die letzten Besatzungssoldaten verließen Österreich",["Der Staatsvertrag wurde unterschrieben","Der 2. Weltkrieg begann","Das Wappen wurde geändert"]),
+mc("nat","Was wurde am 26. Oktober 1955 beschlossen?","Das Gesetz über die Neutralität",["Der Staatsvertrag","Das Wahlrecht ab 16","Die Landeshauptstadt St. Pölten"]),
+mc("nat","Was bedeutet Neutralität?","An keinem Krieg teilnehmen und kein anderes Land im Kriegsfall unterstützen",["In jedem Krieg mitkämpfen","Keine Grenzen haben","Allen Ländern Waffen schicken"]),
+mc("nat","An welchem Tag feiern wir den Nationalfeiertag?","26. Oktober",["15. Mai","25. Oktober","1. Mai"]),
+tf("nat","Im 2. Weltkrieg wurden nicht nur Soldaten getötet oder verletzt, sondern auch Kinder, Frauen und ältere Menschen.",true),
+tf("nat","Österreich darf im Kriegsfall andere Staaten unterstützen.",false,"Neutralität bedeutet: kein anderes Land im Kriegsfall unterstützen."),
+tx("nat","In welchem Jahr wurde Österreich wieder ein freier Staat? (nur die Zahl)",["1955"]),
+mt("nat","Verbinde das Datum mit dem Ereignis.",[["1939–1945","2. Weltkrieg"],["1945–1955","Wiederaufbau, Besatzungsmächte"],["15. Mai 1955","Staatsvertrag"],["25. Oktober 1955","Letzte Soldaten verlassen Österreich"],["26. Oktober 1955","Neutralitätsgesetz"]],"{l} – was geschah?")
+];
+
+/* ============================================================
+   PROGRAMM
+   ============================================================ */
+const $=s=>document.querySelector(s), app=$("#app");
+const TM=Object.fromEntries(TOPICS.map(t=>[t.id,t]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function h(tag,attrs,...kids){const e=document.createElement(tag);for(const k in(attrs||{})){if(k==="class")e.className=attrs[k];else if(k.startsWith("on"))e[k]=attrs[k];else if(k==="html")e.innerHTML=attrs[k];else e.setAttribute(k,attrs[k])}for(const c of kids.flat())if(c!=null)e.append(c.nodeType?c:document.createTextNode(c));return e}
+function show(title,...nodes){window.scrollTo(0,0);$("#title").textContent=title;$("#prog").textContent="";app.replaceChildren(...nodes)}
+$("#home").onclick=home;
+
+function norm(s){return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/ß/g,"ss").replace(/[^a-z0-9]/g,"")}
+function lev(a,b){const m=[];for(let i=0;i<=a.length;i++){m[i]=[i]}for(let j=1;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+function fuzzyOk(inp,acc){const n=norm(inp);if(!n)return false;return acc.some(a=>{const x=norm(a);if(/^\d+$/.test(x))return n===x;const tol=x.length>=9?2:x.length>=4?1:0;return lev(n,x)<=tol})}
+
+/* ---------- Startseite ---------- */
+function home(){
+  show("Sachunterricht 4. Klasse",
+    h("p",{class:"sub"},"Niederösterreich · St. Pölten · Mülltrennung · Nationalfeiertag · Bundesländer. Kein Login nötig."),
+    h("div",{class:"grid"},
+      h("button",{class:"big",onclick:sheet},h("b",{},"📖 Lernzettel"),h("span",{},"Alles Wichtige zum Lesen und Ausdrucken")),
+      h("button",{class:"big",onclick:()=>pick("Karteikarten",cards)},h("b",{},"🃏 Karteikarten"),h("span",{},"Antippen, umdrehen, „gewusst“ oder „nochmal“")),
+      h("button",{class:"big",onclick:()=>pick("Üben",practice)},h("b",{},"✏️ Üben"),h("span",{},"Fragen mit sofortiger Rückmeldung")),
+      h("button",{class:"big",onclick:startTest},h("b",{},"📝 Testen"),h("span",{},"20 gemischte Fragen wie bei der Prüfung, am Ende mit Auswertung"))
+    ));
+}
+
+/* ---------- Lernzettel ---------- */
+function sheet(){
+  const nodes=[h("div",{class:"row noprint"},h("button",{class:"pri small",onclick:()=>window.print()},"🖨️ Drucken / als PDF speichern"),...TOPICS.map(t=>h("button",{class:"small",onclick:()=>document.getElementById("s-"+t.id).scrollIntoView({behavior:"smooth"})},t.icon+" "+t.title)))];
+  const w=h("div",{class:"sheet"});
+  TOPICS.forEach(t=>{const s=h("section",{id:"s-"+t.id,style:"border-left-color:"+t.color},h("h2",{},t.icon+" "+t.title));t.sections.forEach(x=>{s.append(h("h3",{},x.h),h("ul",{},x.items.map(i=>h("li",{html:i}))))});w.append(s)});
+  nodes.push(w);show("Lernzettel",...nodes);
+}
+
+/* ---------- Themenauswahl ---------- */
+function pick(name,fn){
+  const sel=new Set(TOPICS.map(t=>t.id));
+  const chips=h("div",{class:"chips"});
+  const upd=()=>chips.querySelectorAll("button").forEach(b=>{const on=sel.has(b.dataset.id);b.style.background=on?b.dataset.c:"#fff";b.style.color=on?"#fff":"#1d2733";b.style.borderColor=b.dataset.c});
+  TOPICS.forEach(t=>chips.append(h("button",{class:"chip","data-id":t.id,"data-c":t.color,onclick:e=>{const b=e.currentTarget;sel.has(t.id)?sel.delete(t.id):sel.add(t.id);upd()}},t.icon+" "+t.title)));
+  show(name,h("p",{},"Welche Themen willst du machen? (Antippen zum Ein-/Ausschalten)"),chips,
+    h("button",{class:"pri",onclick:()=>{if(sel.size)fn([...sel])}},"Los geht’s ▶"));upd();
+}
+
+/* ---------- Karteikarten ---------- */
+function makeCards(topics){
+  const out=[];
+  Q.filter(q=>topics.includes(q.t)).forEach(q=>{
+    if(q.k==="mc")out.push({t:q.t,f:q.q,b:q.c+(q.e?"\n"+q.e:"")});
+    else if(q.k==="tf")out.push({t:q.t,f:"Stimmt das?\n"+q.q,b:(q.a?"✅ Richtig":"❌ Falsch")+(q.e?"\n"+q.e:"")});
+    else if(q.k==="tx")out.push({t:q.t,f:q.q,b:q.acc[0]+(q.e?"\n"+q.e:"")});
+    else if(q.k==="mt")q.p.forEach(p=>out.push({t:q.t,f:q.card.replace("{l}",p[0]),b:p[1]}));
+  });
+  const seen=new Set();return out.filter(c=>{const k=c.f+"|"+c.b;if(seen.has(k))return false;seen.add(k);return true});
+}
+function cards(topics){
+  let queue=shuffle(makeCards(topics)),total=queue.length,known=0,flipped=false;
+  const draw=()=>{
+    if(!queue.length){show("Karteikarten",h("div",{class:"qcard"},h("h2",{},"🎉 Alle Karten gewusst!"),h("p",{},total+" Karten geschafft."),h("div",{class:"row"},h("button",{class:"pri",onclick:()=>cards(topics)},"Nochmal"),h("button",{onclick:home},"Menü"))));return}
+    const c=queue[0];flipped=false;
+    const box=h("div",{class:"flash",onclick:flip},h("div",{},c.f.split("\n").map((l,i)=>h("div",{},l))));
+    const tag=h("span",{class:"tag",style:"background:"+TM[c.t].color},TM[c.t].icon+" "+TM[c.t].title);
+    const btns=h("div",{class:"row",style:"visibility:hidden"},h("button",{class:"pri",onclick:()=>{known++;queue.shift();draw()}},"✅ Gewusst"),h("button",{onclick:()=>{queue.push(queue.shift());draw()}},"🔁 Nochmal"));
+    function flip(){if(flipped){flipped=false;box.classList.remove("back");box.replaceChildren(h("div",{},c.f.split("\n").map(l=>h("div",{},l))));btns.style.visibility="hidden";return}
+      flipped=true;box.classList.add("back");box.replaceChildren(h("div",{},c.b.split("\n").map((l,i)=>h("div",{style:i?"font-size:20px;color:#5b6b7d;margin-top:10px":"font-weight:700"},l))));btns.style.visibility="visible"}
+    show("Karteikarten",tag,box,h("p",{class:"sub"},"Tippe auf die Karte zum Umdrehen."),btns,h("p",{class:"sub"},"Gewusst: "+known+" von "+total));
+  };draw();
+}
+
+/* ---------- Fragen anzeigen ---------- */
+function runSession(title,list,mode,onEnd){
+  const queue=list.map(q=>({q,retry:false})),results=[];let n=0,total=queue.length;
+  const next=()=>{
+    if(!queue.length){onEnd(results);return}
+    const it=queue.shift(),q=it.q;n++;
+    const box=h("div",{class:"qcard"});
+    const tag=h("span",{class:"tag",style:"background:"+TM[q.t].color},TM[q.t].icon+" "+TM[q.t].title);
+    const bar=h("div",{class:"bar"},h("i",{style:"width:"+Math.round((total-queue.length-1)/total*100)+"%"}));
+    show(title,tag,box,bar);
+    $("#prog").textContent="Frage "+Math.min(n,total)+" / "+total;
+    renderQ(q,mode,box,(ok,given,ans)=>{
+      if(!it.retry)results.push({q,ok,given,ans});
+      if(mode==="practice"&&!ok&&!it.retry)queue.push({q,retry:true});
+      next();
+    });
+  };next();
+}
+function fbBox(ok,q){return h("div",{class:"fb "+(ok?"ok":"bad")},h("b",{},ok?"✅ Richtig! ":"❌ Leider falsch. "),q.e||"")}
+function renderQ(q,mode,box,done){
+  if(q.k==="mc")choice(q,mode,box,done,shuffle([q.c,...q.w]),q.c,q.q);
+  else if(q.k==="tf")choice(q,mode,box,done,["Richtig","Falsch"],q.a?"Richtig":"Falsch","Stimmt das? "+q.q);
+  else if(q.k==="tx")typed(q,mode,box,done);
+  else match(q,mode,box,done);
+}
+function choice(q,mode,box,done,opts,correct,text){
+  let chosen=null,answered=false;
+  const list=h("div",{class:"opts"}),fb=h("div"),nx=h("button",{class:"pri",style:"margin-top:14px",disabled:true},"Weiter ▶");
+  const btns=opts.map(o=>h("button",{class:"opt",onclick:()=>{
+    if(answered)return;chosen=o;
+    if(mode==="practice"){answered=true;btns.forEach(b=>{if(b.textContent===correct)b.classList.add("ok");else if(b.textContent===o)b.classList.add("bad")});fb.replaceChildren(fbBox(o===correct,q))}
+    else btns.forEach(b=>b.classList.toggle("sel",b.textContent===o));
+    nx.disabled=false;
+  }},o));
+  list.append(...btns);nx.onclick=()=>done(chosen===correct,chosen,correct);
+  box.append(h("h2",{},text),list,fb,nx);
+}
+function typed(q,mode,box,done){
+  const inp=h("input",{type:"text",autocomplete:"off",autocapitalize:"none",spellcheck:"false",placeholder:"Antwort eintippen …"});
+  const fb=h("div"),btn=h("button",{class:"pri",style:"margin-top:14px"},mode==="practice"?"Prüfen":"Weiter ▶");let checked=false,ok=false;
+  btn.onclick=()=>{
+    if(mode==="practice"&&!checked){checked=true;ok=fuzzyOk(inp.value,q.acc);inp.disabled=true;fb.replaceChildren(h("div",{class:"fb "+(ok?"ok":"bad")},h("b",{},ok?"✅ Richtig! ":"❌ Leider falsch. "),"Richtig ist: "+q.acc[0]+". "+(q.e||"")));btn.textContent="Weiter ▶";return}
+    if(mode==="practice")done(ok,inp.value,q.acc[0]);else done(fuzzyOk(inp.value,q.acc),inp.value||"(leer)",q.acc[0]);
+  };
+  inp.onkeydown=e=>{if(e.key==="Enter")btn.click()};
+  box.append(h("h2",{},q.q),inp,fb,btn);setTimeout(()=>{try{inp.focus()}catch(e){}},50);
+}
+function match(q,mode,box,done){
+  const left=q.p.map((p,i)=>({i,t:p[0]})),right=shuffle(q.p.map((p,i)=>({i,t:p[1]})));
+  let sel=null,wrong=0,solved=0;const nx=h("button",{class:"pri",style:"margin-top:14px",disabled:true},"Weiter ▶");
+  const grid=h("div",{class:"match"});
+  const lb=left.map(x=>h("button",{},x.t)),rb=right.map(x=>h("button",{},x.t));
+  lb.forEach((b,i)=>b.onclick=()=>{if(b.classList.contains("ok"))return;lb.forEach(o=>o.classList.remove("sel"));b.classList.add("sel");sel=i});
+  rb.forEach((b,j)=>b.onclick=()=>{
+    if(sel===null||b.classList.contains("ok"))return;
+    const a=lb[sel];
+    if(left[sel].i===right[j].i){a.classList.remove("sel");a.classList.add("ok");b.classList.add("ok");sel=null;solved++;if(solved===q.p.length)nx.disabled=false}
+    else{wrong++;b.classList.add("bad");setTimeout(()=>b.classList.remove("bad"),500)}
+  });
+  const rows=Math.max(lb.length,rb.length);for(let i=0;i<rows;i++)grid.append(lb[i],rb[i]);
+  nx.onclick=()=>done(wrong===0,wrong===0?"alles richtig":wrong+" Fehlversuch(e)",q.p.map(p=>p[0]+" → "+p[1]).join("; "));
+  box.append(h("h2",{},q.q),h("p",{class:"sub"},"Tippe links auf einen Begriff und rechts auf den passenden Partner."),grid,nx);
+}
+
+/* ---------- Üben ---------- */
+function practice(topics){
+  const list=shuffle(Q.filter(q=>topics.includes(q.t)));
+  runSession("Üben",list,"practice",res=>{
+    const first=res.filter(r=>r.ok).length;
+    show("Üben",h("div",{class:"qcard"},h("h2",{},"Geschafft! 🎉"),h("p",{},"Beim ersten Versuch richtig: "+first+" von "+res.length+"."),h("p",{class:"sub"},"Falsche Fragen kamen am Ende noch einmal dran."),h("div",{class:"row"},h("button",{class:"pri",onclick:()=>practice(topics)},"Nochmal üben"),h("button",{onclick:home},"Menü"))));
+  });
+}
+
+/* ---------- Test ---------- */
+const TESTMIX={land:3,noe:3,reg:3,stp:4,muell:4,nat:3};
+function startTest(){
+  let list=[];for(const t in TESTMIX){
+    const pool=shuffle(Q.filter(q=>q.t===t));
+    // möglichst gemischte Fragetypen
+    const pick=[];const kinds=shuffle(["mc","tf","tx","mt","mc","mc"]);
+    for(const k of kinds){if(pick.length>=TESTMIX[t])break;const i=pool.findIndex(q=>q.k===k&&!pick.includes(q));if(i>=0)pick.push(pool[i])}
+    for(const q of pool){if(pick.length>=TESTMIX[t])break;if(!pick.includes(q))pick.push(q)}
+    list.push(...pick);
+  }
+  list=shuffle(list);
+  runSession("Test",list,"test",res=>{
+    const ok=res.filter(r=>r.ok).length,pct=ok/res.length;
+    const stars=pct>=.9?3:pct>=.7?2:pct>=.5?1:0;
+    const msg=stars===3?"Super! Du bist ein Sachunterrichts-Profi!":stars===2?"Gut gemacht! Mit etwas Üben wird es noch besser.":"Übe die falschen Fragen noch einmal – du schaffst das!";
+    const wrong=res.filter(r=>!r.ok);
+    show("Auswertung",h("div",{class:"qcard"},
+      h("div",{class:"stars"},"⭐".repeat(stars)+"☆".repeat(3-stars)),
+      h("h2",{style:"text-align:center"},ok+" von "+res.length+" richtig"),h("p",{style:"text-align:center"},msg),
+      h("div",{class:"row",style:"justify-content:center"},
+        wrong.length?h("button",{class:"pri",onclick:()=>runSession("Fehler üben",wrong.map(r=>r.q),"practice",()=>show("Fehler üben",h("div",{class:"qcard"},h("h2",{},"Gut geübt! 💪"),h("div",{class:"row"},h("button",{class:"pri",onclick:startTest},"Neuer Test"),h("button",{onclick:home},"Menü"))))) },"Fehler nochmal üben"):null,
+        h("button",{onclick:startTest},"Neuer Test"),h("button",{onclick:home},"Menü"))),
+      wrong.length?h("h3",{},"Das solltest du noch üben:"):null,
+      ...wrong.map(r=>h("div",{class:"rev"},h("b",{},r.q.k==="tf"?"Stimmt das? "+r.q.q:r.q.q),h("br"),"Deine Antwort: "+(r.given||"–"),h("br"),"Richtig: "+r.ans)));
+  });
+}
+home();
+</script>
+</body>
+</html>
