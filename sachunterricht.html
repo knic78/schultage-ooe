@@ -51,6 +51,12 @@ input[type=text]{font:inherit;width:100%;padding:14px;border:2px solid var(--lin
 .sheet ul{margin:4px 0 0;padding-left:22px}.sheet li{margin:3px 0;font-size:19px}
 .stars{font-size:54px;text-align:center;letter-spacing:6px}
 .rev{border-left:6px solid var(--bad);background:var(--card);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:18px}
+.note{font-size:64px;font-weight:800;text-align:center;line-height:1.1}
+.ov{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:18px}
+.ov .st{font-size:22px;min-width:30px}.ov small{display:block;color:var(--mut);font-size:15px}
+details{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:6px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:700;font-size:20px;padding:10px 0;min-height:48px}
+.hist{display:flex;justify-content:space-between;width:100%;text-align:left}
 @media(max-width:640px){body{font-size:18px}.match{grid-template-columns:1fr}}
 @media print{header,.noprint{display:none!important}body{background:#fff;font-size:13px}.sheet li{font-size:13px}.sheet h2{font-size:17px}.sheet section{border-width:1px 1px 1px 6px;margin:8px 0;padding:2px 12px 8px}main{max-width:none;padding:0}}
 </style>
@@ -245,16 +251,43 @@ function norm(s){return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ
 function lev(a,b){const m=[];for(let i=0;i<=a.length;i++){m[i]=[i]}for(let j=1;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
 function fuzzyOk(inp,acc){const n=norm(inp);if(!n)return false;return acc.some(a=>{const x=norm(a);if(/^\d+$/.test(x))return n===x;const tol=x.length>=9?2:x.length>=4?1:0;return lev(n,x)<=tol})}
 
+
+/* ---------- Punkte, Note, Speicher ---------- */
+const GRENZEN=[[90,1],[80,2],[65,3],[50,4],[0,5]]; /* ab x % gibt es Note n – bei Bedarf anpassen */
+const NOTEN=["","Sehr gut","Gut","Befriedigend","Genügend","Nicht genügend"];
+const noteFor=pct=>{for(const[g,n]of GRENZEN)if(pct>=g)return n;return 5};
+/* Punkte je Frage nach Schwierigkeit: Richtig/Falsch 1, Auswahl 2, Eintippen 3, Zuordnen = 1 je Paar */
+const maxPts=q=>q.k==="tf"?1:q.k==="mc"?2:q.k==="tx"?3:q.p.length;
+function qid(q){let s=q.t+"|"+q.q+(q.k==="mt"?"|"+q.p.map(p=>p[0]).join(","):"");let x=5381;for(let i=0;i<s.length;i++)x=((x<<5)+x+s.charCodeAt(i))>>>0;return q.k+x.toString(36)}
+const qLabel=q=>q.k==="tf"?"Stimmt das? "+q.q:q.q;
+const QBYID={};Q.forEach(q=>QBYID[qid(q)]=q);
+const KEY="sachu4_v1";let store={hist:[],stat:{}},storeOK=true;
+function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r);if(d&&Array.isArray(d.hist)&&d.stat)store=d}}catch(e){storeOK=false}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));storeOK=true}catch(e){storeOK=false}}
+function record(mode,res){const now=Date.now(),m=mode==="test"?"t":"p";
+  res.forEach(r=>{const s=store.stat[qid(r.q)]||(store.stat[qid(r.q)]={}),e=s[m]||(s[m]={ok:0,bad:0});r.ok?e.ok++:e.bad++;e.last=r.ok?1:0;e.ts=now});save()}
+const fmtDate=ts=>new Date(ts).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+function exportData(){const b=new Blob([JSON.stringify(store)],{type:"application/json"});const a=h("a",{href:URL.createObjectURL(b),download:"sachunterricht-ergebnisse.json"});document.body.append(a);a.click();a.remove()}
+function importData(){const i=h("input",{type:"file",accept:".json,application/json"});i.onchange=()=>{const f=i.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!d||!Array.isArray(d.hist)||typeof d.stat!=="object")throw 0;store=d;save();home()}catch(e){alert("Die Datei konnte nicht gelesen werden.")}})};i.click()}
+function resetData(){if(confirm("Alle gespeicherten Ergebnisse auf diesem Gerät löschen?")){store={hist:[],stat:{}};save();home()}}
+const isPos=q=>{const s=store.stat[qid(q)];return !!(s&&s.t&&s.t.last===1)};
+
 /* ---------- Startseite ---------- */
 function home(){
+  const last=store.hist[0];
   show("Sachunterricht 4. Klasse",
     h("p",{class:"sub"},"Niederösterreich · St. Pölten · Mülltrennung · Nationalfeiertag · Bundesländer. Kein Login nötig."),
+    last?h("p",{class:"sub"},"Letzter Test ("+fmtDate(last.ts)+"): Note "+last.note+" – "+last.pts+" von "+last.max+" Punkten"):null,
     h("div",{class:"grid"},
       h("button",{class:"big",onclick:sheet},h("b",{},"📖 Lernzettel"),h("span",{},"Alles Wichtige zum Lesen und Ausdrucken")),
       h("button",{class:"big",onclick:()=>pick("Karteikarten",cards)},h("b",{},"🃏 Karteikarten"),h("span",{},"Antippen, umdrehen, „gewusst“ oder „nochmal“")),
       h("button",{class:"big",onclick:()=>pick("Üben",practice)},h("b",{},"✏️ Üben"),h("span",{},"Fragen mit sofortiger Rückmeldung")),
-      h("button",{class:"big",onclick:startTest},h("b",{},"📝 Testen"),h("span",{},"20 gemischte Fragen wie bei der Prüfung, am Ende mit Auswertung"))
-    ));
+      h("button",{class:"big",onclick:startTest},h("b",{},"📝 Testen"),h("span",{},"Gemischte Fragen mit Punkten und Note, wird gespeichert")),
+      h("button",{class:"big",onclick:()=>overview("all")},h("b",{},"📊 Übersicht"),h("span",{},"Welche Fragen sind im Test schon richtig, welche noch nicht?")),
+      h("button",{class:"big",onclick:history},h("b",{},"🗂️ Verlauf"),h("span",{},"Alle bisherigen Tests mit Punkten und Note"))
+    ),
+    h("p",{class:"sub",style:"margin-top:22px"},storeOK?"💾 Ergebnisse werden automatisch auf diesem Gerät gespeichert (nur im selben Browser).":"⚠️ Speichern ist hier nicht möglich (privater Modus oder Datei-Zugriff gesperrt). Bitte die Seite normal öffnen."),
+    h("div",{class:"row"},h("button",{class:"small",onclick:exportData},"⬇️ Sicherung speichern"),h("button",{class:"small",onclick:importData},"⬆️ Sicherung laden"),h("button",{class:"small",onclick:resetData},"🗑️ Alles zurücksetzen")));
 }
 
 /* ---------- Lernzettel ---------- */
@@ -307,12 +340,13 @@ function runSession(title,list,mode,onEnd){
     if(!queue.length){onEnd(results);return}
     const it=queue.shift(),q=it.q;n++;
     const box=h("div",{class:"qcard"});
-    const tag=h("span",{class:"tag",style:"background:"+TM[q.t].color},TM[q.t].icon+" "+TM[q.t].title);
+    const mp=maxPts(q);
+    const tag=h("div",{},h("span",{class:"tag",style:"background:"+TM[q.t].color},TM[q.t].icon+" "+TM[q.t].title)," ",h("span",{class:"tag",style:"background:#64748b"},mp+(mp>1?" Punkte":" Punkt")));
     const bar=h("div",{class:"bar"},h("i",{style:"width:"+Math.round((total-queue.length-1)/total*100)+"%"}));
     show(title,tag,box,bar);
     $("#prog").textContent="Frage "+Math.min(n,total)+" / "+total;
-    renderQ(q,mode,box,(ok,given,ans)=>{
-      if(!it.retry)results.push({q,ok,given,ans});
+    renderQ(q,mode,box,(ok,given,ans,pts)=>{
+      if(!it.retry)results.push({q,ok,given,ans,max:mp,pts:pts===undefined?(ok?mp:0):pts});
       if(mode==="practice"&&!ok&&!it.retry)queue.push({q,retry:true});
       next();
     });
@@ -360,16 +394,17 @@ function match(q,mode,box,done){
     else{wrong++;b.classList.add("bad");setTimeout(()=>b.classList.remove("bad"),500)}
   });
   const rows=Math.max(lb.length,rb.length);for(let i=0;i<rows;i++)grid.append(lb[i],rb[i]);
-  nx.onclick=()=>done(wrong===0,wrong===0?"alles richtig":wrong+" Fehlversuch(e)",q.p.map(p=>p[0]+" → "+p[1]).join("; "));
+  nx.onclick=()=>done(wrong===0,wrong===0?"alles richtig":wrong+" Fehlversuch(e)",q.p.map(p=>p[0]+" → "+p[1]).join("; "),Math.max(0,q.p.length-wrong));
   box.append(h("h2",{},q.q),h("p",{class:"sub"},"Tippe links auf einen Begriff und rechts auf den passenden Partner."),grid,nx);
 }
 
 /* ---------- Üben ---------- */
-function practice(topics){
-  const list=shuffle(Q.filter(q=>topics.includes(q.t)));
-  runSession("Üben",list,"practice",res=>{
+function practice(topics){practiceList(Q.filter(q=>topics.includes(q.t)),()=>practice(topics))}
+function practiceList(qs,again){again=again||(()=>practiceList(qs,null));
+  runSession("Üben",shuffle(qs),"practice",res=>{
+    record("practice",res);
     const first=res.filter(r=>r.ok).length;
-    show("Üben",h("div",{class:"qcard"},h("h2",{},"Geschafft! 🎉"),h("p",{},"Beim ersten Versuch richtig: "+first+" von "+res.length+"."),h("p",{class:"sub"},"Falsche Fragen kamen am Ende noch einmal dran."),h("div",{class:"row"},h("button",{class:"pri",onclick:()=>practice(topics)},"Nochmal üben"),h("button",{onclick:home},"Menü"))));
+    show("Üben",h("div",{class:"qcard"},h("h2",{},"Geschafft! 🎉"),h("p",{},"Beim ersten Versuch richtig: "+first+" von "+res.length+"."),h("p",{class:"sub"},"Falsche Fragen kamen am Ende noch einmal dran."),h("div",{class:"row"},h("button",{class:"pri",onclick:again},"Nochmal üben"),h("button",{onclick:()=>overview("all")},"📊 Übersicht"),h("button",{onclick:home},"Menü"))));
   });
 }
 
@@ -378,29 +413,77 @@ const TESTMIX={land:3,noe:3,reg:3,stp:4,muell:4,nat:3};
 function startTest(){
   let list=[];for(const t in TESTMIX){
     const pool=shuffle(Q.filter(q=>q.t===t));
-    // möglichst gemischte Fragetypen
-    const pick=[];const kinds=shuffle(["mc","tf","tx","mt","mc","mc"]);
-    for(const k of kinds){if(pick.length>=TESTMIX[t])break;const i=pool.findIndex(q=>q.k===k&&!pick.includes(q));if(i>=0)pick.push(pool[i])}
-    for(const q of pool){if(pick.length>=TESTMIX[t])break;if(!pick.includes(q))pick.push(q)}
-    list.push(...pick);
+    /* offene/falsche Fragen bevorzugen, damit Wiederholungen sinnvoll sind */
+    pool.sort((a,b)=>isPos(a)-isPos(b));
+    const chosen=[];const kinds=shuffle(["mc","tf","tx","mt","mc","mc"]);
+    for(const k of kinds){if(chosen.length>=TESTMIX[t])break;const i=pool.findIndex(q=>q.k===k&&!chosen.includes(q));if(i>=0)chosen.push(pool[i])}
+    for(const q of pool){if(chosen.length>=TESTMIX[t])break;if(!chosen.includes(q))chosen.push(q)}
+    list.push(...chosen);
   }
   list=shuffle(list);
   runSession("Test",list,"test",res=>{
-    const ok=res.filter(r=>r.ok).length,pct=ok/res.length;
-    const stars=pct>=.9?3:pct>=.7?2:pct>=.5?1:0;
-    const msg=stars===3?"Super! Du bist ein Sachunterrichts-Profi!":stars===2?"Gut gemacht! Mit etwas Üben wird es noch besser.":"Übe die falschen Fragen noch einmal – du schaffst das!";
-    const wrong=res.filter(r=>!r.ok);
-    show("Auswertung",h("div",{class:"qcard"},
-      h("div",{class:"stars"},"⭐".repeat(stars)+"☆".repeat(3-stars)),
-      h("h2",{style:"text-align:center"},ok+" von "+res.length+" richtig"),h("p",{style:"text-align:center"},msg),
-      h("div",{class:"row",style:"justify-content:center"},
-        wrong.length?h("button",{class:"pri",onclick:()=>runSession("Fehler üben",wrong.map(r=>r.q),"practice",()=>show("Fehler üben",h("div",{class:"qcard"},h("h2",{},"Gut geübt! 💪"),h("div",{class:"row"},h("button",{class:"pri",onclick:startTest},"Neuer Test"),h("button",{onclick:home},"Menü"))))) },"Fehler nochmal üben"):null,
-        h("button",{onclick:startTest},"Neuer Test"),h("button",{onclick:home},"Menü"))),
-      wrong.length?h("h3",{},"Das solltest du noch üben:"):null,
-      ...wrong.map(r=>h("div",{class:"rev"},h("b",{},r.q.k==="tf"?"Stimmt das? "+r.q.q:r.q.q),h("br"),"Deine Antwort: "+(r.given||"–"),h("br"),"Richtig: "+r.ans)));
+    const pts=res.reduce((a,r)=>a+r.pts,0),max=res.reduce((a,r)=>a+r.max,0),note=noteFor(pts/max*100);
+    const entry={ts:Date.now(),pts,max,note,items:res.map(r=>({id:qid(r.q),q:qLabel(r.q),ok:r.ok,pts:r.pts,max:r.max,given:r.given||"",ans:r.ans}))};
+    record("test",res);store.hist.unshift(entry);store.hist=store.hist.slice(0,60);save();
+    resultScreen(entry);
   });
 }
-home();
+const NOTECOL=["","#2e9e5b","#4caf50","#d99a06","#e0701a","#d64545"];
+function resultScreen(e){
+  const pct=Math.round(e.pts/e.max*100),wrong=e.items.filter(i=>i.pts<i.max);
+  const msg=e.note<=2?"Sehr schön gelernt!":e.note===3?"Gut, mit etwas Üben wird es noch besser.":"Übe die offenen Fragen noch einmal – du schaffst das!";
+  show("Auswertung",h("div",{class:"qcard"},
+    h("p",{class:"sub",style:"text-align:center"},fmtDate(e.ts)),
+    h("div",{class:"note",style:"color:"+NOTECOL[e.note]},"Note "+e.note),
+    h("h2",{style:"text-align:center"},NOTEN[e.note]),
+    h("p",{style:"text-align:center;font-size:22px"},e.pts+" von "+e.max+" Punkten ("+pct+" %)"),
+    h("p",{style:"text-align:center"},msg),
+    h("p",{class:"sub",style:"text-align:center"},"Notenschlüssel: "+GRENZEN.slice(0,4).map(g=>"Note "+g[1]+" ab "+g[0]+" %").join(" · ")+", darunter Note 5"),
+    h("div",{class:"row",style:"justify-content:center"},
+      wrong.length?h("button",{class:"pri",onclick:()=>{const qs=wrong.map(i=>QBYID[i.id]).filter(Boolean);practiceList(qs,()=>practiceList(qs,null))}},"Fehler nochmal üben"):null,
+      h("button",{onclick:startTest},"Neuer Test"),h("button",{onclick:()=>overview("all")},"📊 Übersicht"),h("button",{onclick:home},"Menü"))),
+    wrong.length?h("h3",{},"Das solltest du noch üben:"):h("h3",{},"Alles richtig! 🎉"),
+    ...wrong.map(r=>h("div",{class:"rev"},h("b",{},r.q),h("br"),"Punkte: "+r.pts+" von "+r.max,h("br"),"Deine Antwort: "+(r.given||"–"),h("br"),"Richtig: "+r.ans)));
+}
+
+/* ---------- Übersicht: welche Fragen sind im Test schon positiv? ---------- */
+function overview(filter){
+  const all=Q.length,pos=Q.filter(isPos).length,bad=Q.filter(q=>{const s=store.stat[qid(q)];return s&&s.t&&s.t.last===0}).length,open=all-pos-bad;
+  const chip=(f,l)=>h("button",{class:"small",style:filter===f?"background:#2563eb;color:#fff;border-color:#2563eb":"",onclick:()=>overview(f)},l);
+  const nodes=[
+    h("div",{class:"qcard"},h("h2",{},"✅ "+pos+" von "+all+" Fragen im Test richtig beantwortet"),
+      h("p",{},"❌ zuletzt falsch: "+bad+"  ·  ⚪ noch nicht im Test gefragt: "+open),
+      h("div",{class:"bar"},h("i",{style:"width:"+Math.round(pos/all*100)+"%;background:#2e9e5b"})),
+      h("p",{class:"sub"},"Positiv = die Frage wurde bei ihrem letzten Auftreten im Test voll richtig beantwortet."),
+      h("div",{class:"row"},chip("all","Alle"),chip("neg","Noch nicht positiv"),chip("pos","Positiv"),
+        (all-pos)?h("button",{class:"pri small",onclick:()=>practiceList(Q.filter(q=>!isPos(q)),null)},"✏️ Nicht positive Fragen üben"):null))];
+  TOPICS.forEach(t=>{
+    const qs=Q.filter(q=>q.t===t.id),tp=qs.filter(isPos).length;
+    const shown=qs.filter(q=>filter==="all"||(filter==="pos"?isPos(q):!isPos(q)));
+    if(!shown.length)return;
+    const d=h("details",{},h("summary",{},t.icon+" "+t.title+" – "+tp+" / "+qs.length+" positiv"));
+    if(filter!=="all")d.setAttribute("open","");
+    shown.forEach(q=>{const s=store.stat[qid(q)]||{},tt=s.t,pp=s.p;
+      const st=tt?(tt.last===1?"✅":"❌"):"⚪";
+      const info=[tt?"Test: "+tt.ok+"× richtig, "+tt.bad+"× falsch":"Test: noch nicht gefragt",pp?"Üben: "+pp.ok+"× richtig, "+pp.bad+"× falsch":null].filter(Boolean).join(" · ");
+      d.append(h("div",{class:"ov"},h("span",{class:"st"},st),h("div",{},qLabel(q),h("small",{},maxPts(q)+(maxPts(q)>1?" Punkte":" Punkt")+" · "+info))))});
+    nodes.push(d);
+  });
+  show("Übersicht",...nodes);
+}
+
+/* ---------- Verlauf ---------- */
+function history(){
+  const nodes=[];
+  if(!store.hist.length)nodes.push(h("div",{class:"qcard"},h("h2",{},"Noch kein Test gemacht"),h("p",{},"Nach dem ersten Test erscheint er hier mit Punkten und Note."),h("button",{class:"pri",onclick:startTest},"Test starten")));
+  else{
+    const avg=store.hist.slice(0,5).reduce((a,e)=>a+e.note,0)/Math.min(5,store.hist.length);
+    nodes.push(h("p",{class:"sub"},store.hist.length+" Test(s) gespeichert · Durchschnittsnote der letzten "+Math.min(5,store.hist.length)+": "+avg.toFixed(1).replace(".",",")+" · Antippen zeigt die Details"));
+    store.hist.forEach(e=>nodes.push(h("button",{class:"opt hist",style:"margin:8px 0",onclick:()=>resultScreen(e)},h("span",{},fmtDate(e.ts)),h("b",{style:"color:"+NOTECOL[e.note]},"Note "+e.note+" · "+e.pts+"/"+e.max+" Punkte"))));
+  }
+  show("Verlauf",...nodes);
+}
+load();home();
 </script>
 </body>
 </html>
